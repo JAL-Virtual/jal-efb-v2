@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+/* ==============================
+   Base theme & global settings
+   ============================== */
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  font-family: DynaPuff;
+  color: rgb(var(--foreground-rgb));
+  background:
+    linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb)))
+    rgb(var(--background-start-rgb));
+}
+
+/* ==============================
+   Enhanced JAL EFB Styles
+   ============================== */
+
+/* Custom button hover effects */
+.jal-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.jal-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.6s ease;
+}
+
+.jal-button:hover::before {
+  left: 100%;
+}
+
+/* Enhanced flight card */
+.flight-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(182, 12, 24, 0.15);
+  transition: all 0.3s ease;
+}
+
+.flight-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(182, 12, 24, 0.25);
+}
+
+/* Glowing effect for important elements */
+.jal-glow {
+  box-shadow: 0 0 10px rgba(182, 12, 24, 0.5);
+}
+
+.jal-glow:hover {
+  box-shadow: 0 0 20px rgba(182, 12, 24, 0.7);
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(182, 12, 24, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(182, 12, 24, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(182, 12, 24, 0.5);
+}
+
+/* Pulse animation for notifications */
+@keyframes jal-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(182, 12, 24, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(182, 12, 24, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(182, 12, 24, 0);
+  }
+}
+
+.jal-pulse {
+  animation: jal-pulse 2s infinite;
+}
+
+/* Enhanced modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Gradient text effects */
+.gradient-text {
+  background: linear-gradient(135deg, #b60c18 0%, #e63946 50%, #ff6b6b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+/* Keyframes for gradient-text animation (added) */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Enhanced button grid layout */
+.button-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .button-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
+/* Icon enhancements */
+.custom-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
+}
+
+.custom-icon:hover {
+  filter: drop-shadow(0 4px 8px rgba(182, 12, 24, 0.4));
+  transform: scale(1.1);
+}
+
+/* Loading animation */
+@keyframes jal-loading {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.jal-loading {
+  animation: jal-loading 1.5s linear infinite;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #b60c18;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+}
