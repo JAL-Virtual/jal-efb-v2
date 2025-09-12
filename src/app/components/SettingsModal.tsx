@@ -1,18 +1,57 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Modal from './Modal';
 import AnimatedModalBg from './AnimatedModalBg';
 
 type Props = {
   show: boolean;
   onClose: () => void;
-  onSave: (pilotId: string, hoppieId: string, simbriefId: string) => void;
+  onSave: (pilotId: string, simbriefId: string) => void;
+  /** kept for compat as fallback only */
   initialPilotId: string;
   initialHoppieId: string;
   initialSimbriefId: string;
 };
 
+/* ----------------------------- helpers ---------------------------------- */
+function pickName(payload: any): string | undefined {
+  // payload = *crew json* (not the wrapper)
+  return (
+    payload?.data?.name ||
+    payload?.user?.name ||
+    payload?.name ||
+    payload?.pilot?.name ||
+    undefined
+  );
+}
+
+function pickIdRaw(payload: any): string | number | undefined {
+  // try a bunch of common shapes
+  return (
+    payload?.data?.pilot_id ??
+    payload?.data?.pilotid ??
+    payload?.user?.pilot_id ??
+    payload?.user?.pilotid ??
+    payload?.pilot?.id ??
+    payload?.id ??
+    undefined
+  );
+}
+
+/** Normalize into JAL-prefixed ID (e.g., 1234 -> JAL1234, jal567 -> JAL567) */
+function formatJalId(v: string | number | undefined | null): string | null {
+  if (v === undefined || v === null) return null;
+  let s = String(v).trim();
+  if (!s) return null;
+  if (/^JAL[0-9A-Z]+$/i.test(s)) return s.toUpperCase();
+  if (/^[0-9]+$/.test(s)) return `JAL${s}`;
+  s = s.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  if (!s.startsWith('JAL')) s = `JAL${s}`;
+  return s;
+}
+
+/* ------------------------------------------------------------------------ */
 const SettingsModal: React.FC<Props> = ({
   show,
   onClose,
@@ -21,92 +60,170 @@ const SettingsModal: React.FC<Props> = ({
   initialHoppieId,
   initialSimbriefId,
 }) => {
+  // Locked ID we use for DB (prefer API → fallback session)
   const [pilotId, setPilotId] = useState(initialPilotId || '');
+
+  // Mongo-backed fields
   const [hoppieId, setHoppieId] = useState(initialHoppieId || '');
   const [simbriefId, setSimbriefId] = useState(initialSimbriefId || '');
-  const [loadingRemote, setLoadingRemote] = useState(false);
+
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // From API (NOT Mongo): name (and we also try to get ID from API)
+  const [jalName, setJalName] = useState<string | null>(null);
+  const [apiPilotId, setApiPilotId] = useState<string | null>(null);
+
   const formRef = useRef<HTMLDivElement>(null);
 
-  // Reset values whenever modal opens
-  useEffect(() => {
-    if (!show) return;
-    setPilotId(initialPilotId || '');
-    setHoppieId(initialHoppieId || '');
-    setSimbriefId(initialSimbriefId || '');
-    setErrMsg(null);
-    setSuccessMsg(null);
-  }, [show, initialPilotId, initialHoppieId, initialSimbriefId]);
+  const flashSuccess = useCallback((msg: string, ms = 2200) => {
+    setSuccessMsg(msg);
+    const t = setTimeout(() => setSuccessMsg(null), ms);
+    return () => clearTimeout(t);
+  }, []);
 
-  // Auto-fetch existing settings from MongoDB when modal opens
-  useEffect(() => {
-    if (!show) return;
-    const id = (initialPilotId || pilotId || '').toUpperCase().trim();
-    if (!id) return;
+  /** Resolve Pilot ID from session (/api/auth/me) with fallback to props. */
+  const resolvePilotIdFromSession = useCallback(async (): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/auth/me', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+      const data = await res.json();
+      if (res.ok) {
+        const jal = data?.user?.jalId?.toString().toUpperCase().trim();
+        if (jal) return jal;
+      }
+    } catch {
+      /* ignore; use fallback */
+    }
+    const fallback = (initialPilotId || '').toUpperCase().trim();
+    return fallback || null;
+  }, [initialPilotId]);
 
-    const fetchExisting = async () => {
+  /** Load Hoppie/SimBrief from MongoDB for this pilotId. */
+  const loadMongoSettings = useCallback(
+    async (pid: string) => {
       try {
-        setLoadingRemote(true);
-        setErrMsg(null);
-        const res = await fetch(`/api/user-settings?pilotId=${encodeURIComponent(id)}`, { 
+        const res = await fetch(`/api/user-settings?pilotId=${encodeURIComponent(pid)}`, {
           cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
+          headers: { 'Cache-Control': 'no-cache' },
         });
-        
         const data = await res.json();
-        
         if (res.ok && data?.data) {
-          setPilotId(data.data.pilotId || id);
           setHoppieId(data.data.hoppieId || '');
           setSimbriefId(data.data.simbriefId || '');
-          
-          if (data.data.pilotId) {
-            setSuccessMsg('Existing settings loaded from database.');
-            setTimeout(() => setSuccessMsg(null), 3000);
-          }
+          flashSuccess('Loaded your saved profile.');
         } else if (res.status === 404) {
-          // No existing settings found - this is normal for new users
-          console.log('No existing settings found for this pilot ID');
+          // no saved profile yet -> leave empty
+          setHoppieId('');
+          setSimbriefId('');
         } else {
           throw new Error(data?.error || 'Failed to fetch settings');
         }
       } catch (e: any) {
-        console.error('Error fetching settings:', e);
-        setErrMsg('Unable to load existing settings from database.');
-      } finally {
-        setLoadingRemote(false);
+        setErrMsg(e?.message || 'Unable to load MongoDB settings.');
       }
-    };
+    },
+    [flashSuccess]
+  );
 
-    fetchExisting();
-  }, [show, initialPilotId, pilotId]);
+  /** Fetch NAME + (preferable) ID from JAL API using localStorage('jalApiKey'). */
+  const fetchPilotFromApi = useCallback(async (): Promise<{ name?: string | null; jalId?: string | null }> => {
+    try {
+      const apiKey = typeof window !== 'undefined' ? localStorage.getItem('jalApiKey') : null;
+      if (!apiKey) return { name: null, jalId: null };
 
-  // Enter to save shortcut
+      const res = await fetch('/api/jal/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ apiKey }),
+      });
+      const wrapper = await res.json().catch(() => ({}));
+      // proxy shape = { data: <crew json> }
+      const crew = wrapper?.data ?? {};
+      const name = pickName(crew) ?? null;
+      const apiId = formatJalId(pickIdRaw(crew));
+
+      if (!res.ok) return { name: null, jalId: null };
+      return { name, jalId: apiId };
+    } catch {
+      return { name: null, jalId: null };
+    }
+  }, []);
+
+  /** On open: resolve IDs and load data:
+   *  1) get sessionId
+   *  2) fetch API {name, apiId}; if apiId found, override pilotId
+   *  3) load Mongo using the final pilotId
+   */
   useEffect(() => {
     if (!show) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !saving) {
-        void handleSave();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [show, pilotId, hoppieId, simbriefId, saving]);
 
+    setErrMsg(null);
+    setSuccessMsg(null);
+
+    // reset to props while resolving
+    setPilotId(initialPilotId || '');
+    setHoppieId(initialHoppieId || '');
+    setSimbriefId(initialSimbriefId || '');
+    setJalName(null);
+    setApiPilotId(null);
+
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+
+      const sessionId = await resolvePilotIdFromSession();
+      if (cancelled) return;
+
+      if (!sessionId) {
+        setErrMsg('Unable to resolve your JAL Pilot ID from the server.');
+        setLoading(false);
+        return;
+      }
+      // start with session id
+      let finalId = sessionId;
+      setPilotId(sessionId);
+
+      // pull from API
+      const { name, jalId } = await fetchPilotFromApi();
+      if (cancelled) return;
+
+      if (name) setJalName(name);
+      if (jalId) {
+        setApiPilotId(jalId);
+        // prefer API ID if present and valid
+        finalId = jalId;
+        setPilotId(jalId);
+      }
+
+      await loadMongoSettings(finalId);
+      if (!cancelled) setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    show,
+    initialPilotId,
+    initialHoppieId,
+    initialSimbriefId,
+    resolvePilotIdFromSession,
+    fetchPilotFromApi,
+    loadMongoSettings,
+  ]);
+
+  // pilotId is read-only in UI, but we still validate existence
   function validate() {
-    const id = pilotId.trim().toUpperCase();
-    if (!id) return 'JAL Pilot ID is required.';
-    if (!/^JAL[0-9A-Z]{3,}$/.test(id)) {
-      return 'JAL Pilot ID should look like JALXXXX (letters/numbers).';
-    }
+    const id = (pilotId || '').trim().toUpperCase();
+    if (!id) return 'Missing JAL Pilot ID.';
+    if (!/^JAL[0-9A-Z]{3,}$/.test(id)) return 'JAL ID should look like JAL1234.';
     return null;
   }
 
-  async function handleSave() {
+  const handleSave = async () => {
     const err = validate();
     if (err) {
       setErrMsg(err);
@@ -118,192 +235,129 @@ const SettingsModal: React.FC<Props> = ({
     try {
       setSaving(true);
       const body = {
-        pilotId: pilotId.toUpperCase().trim(),
+        pilotId: pilotId.toUpperCase().trim(), // <- will be API ID if available
         hoppieId: (hoppieId || '').trim(),
         simbriefId: (simbriefId || '').trim(),
       };
-      
+
+      // Save to MongoDB
       const res = await fetch('/api/user-settings', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Server error: ${res.status}`);
 
-      if (!res.ok) {
-        throw new Error(data?.error || `Server error: ${res.status}`);
-      }
-
-      // Show success message
-      setSuccessMsg('Settings saved to database successfully!');
-      
-      // Bubble up to parent state/localStorage
-      onSave(body.pilotId, body.hoppieId, body.simbriefId);
-      
-      // Close modal after a brief delay
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+      flashSuccess('Saved to database!');
+      onSave(body.pilotId, body.simbriefId);
+      setTimeout(() => onClose(), 900);
     } catch (e: any) {
-      console.error('Save error:', e);
-      setErrMsg(e?.message || 'Failed to save to database. Please try again.');
+      setErrMsg(e?.message || 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
     }
-  }
+  };
 
   if (!show) return null;
+
+  // Display prefers API name & ID; pilotId state already uses API ID when present
+  const displayName = jalName ?? '—';
+  const displayId = pilotId ? formatJalId(pilotId) : '—';
+  const displayCombined = `${displayName} | ${displayId}`;
 
   return (
     <Modal onClose={onClose} wide>
       <AnimatedModalBg />
       <div className="max-w-xl mx-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-2xl border border-gray-700 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#b60c18] to-[#ea4256]"></div>
-        <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#b60c18] opacity-20 rounded-full"></div>
-        <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-[#ea4256] opacity-20 rounded-full"></div>
-        
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#b60c18] to-[#ea4256]" />
+        <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#b60c18] opacity-20 rounded-full" />
+        <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-[#ea4256] opacity-20 rounded-full" />
+
         <h2 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-[#b60c18] to-[#ea4256] bg-clip-text text-transparent">
           PILOT PROFILE SETTINGS
         </h2>
-        <p className="text-gray-400 text-center mb-8 text-sm">Configure your JAL Virtual credentials</p>
+        <p className="text-gray-400 text-center mb-8 text-sm">
+          Name/ID from JAL API (fallback session) • Hoppie/SimBrief stored in database
+        </p>
 
         {errMsg && (
-          <div className="mb-6 p-4 rounded-lg bg-red-900/30 border border-red-800/50 text-red-200 backdrop-blur-sm flex items-start">
-            <svg className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <span>{errMsg}</span>
+          <div className="mb-6 p-4 rounded-lg bg-red-900/30 border border-red-800/50 text-red-200 backdrop-blur-sm">
+            {errMsg}
           </div>
         )}
-
         {successMsg && (
-          <div className="mb-6 p-4 rounded-lg bg-green-900/30 border border-green-800/50 text-green-200 backdrop-blur-sm flex items-start">
-            <svg className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>{successMsg}</span>
+          <div className="mb-6 p-4 rounded-lg bg-green-900/30 border border-green-800/50 text-green-200 backdrop-blur-sm">
+            {successMsg}
           </div>
         )}
 
         <div ref={formRef} className="flex flex-col gap-6 relative z-10">
+          {/* Name | JAL ID — read-only (name/id from API if available; id falls back to session) */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-              JAL PILOT ID
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                className="w-full p-3 pl-10 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all placeholder-gray-500"
-                value={pilotId}
-                onChange={(e) => setPilotId(e.target.value.toUpperCase())}
-                placeholder="e.g. JAL1234"
-                autoFocus
-                disabled={loadingRemote || saving}
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500">Format: JAL followed by letters/numbers (e.g. JAL1234)</p>
+            <label className="block text-sm font-medium text-gray-300">PILOT (name | JAL ID)</label>
+            <input
+              type="text"
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 text-white"
+              value={displayCombined}
+              disabled
+              aria-label="Pilot name and JAL ID"
+            />
+            <p className="text-xs text-gray-500">
+              Name/ID fetched from crew.jalvirtual.com using your API key. If API ID isn&apos;t available, we keep your session ID.
+            </p>
           </div>
 
+          {/* Hoppie (Mongo) */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-              HOPPIE LOGON CODE
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                className="w-full p-3 pl-10 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all placeholder-gray-500"
-                value={hoppieId}
-                onChange={(e) => setHoppieId(e.target.value)}
-                placeholder="e.g. XXXXXXXXXXXXX"
-                disabled={saving}
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500">Your Hoppie logon code for CPDLC communications</p>
+            <label className="block text-sm font-medium text-gray-300">HOPPIE LOGON CODE</label>
+            <input
+              type="text"
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 text-white"
+              value={hoppieId}
+              onChange={(e) => setHoppieId(e.target.value)}
+              placeholder="e.g. ABCDEF"
+              disabled={saving}
+            />
           </div>
 
+          {/* SimBrief (Mongo) */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300 flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              SIMBRIEF PILOT ID
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                className="w-full p-3 pl-10 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all placeholder-gray-500"
-                value={simbriefId}
-                onChange={(e) => setSimbriefId(e.target.value)}
-                placeholder="e.g. 123456"
-                disabled={saving}
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500">Your SimBrief ID for flight plan integration</p>
+            <label className="block text-sm font-medium text-gray-300">SIMBRIEF PILOT ID</label>
+            <input
+              type="text"
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 text-white"
+              value={simbriefId}
+              onChange={(e) => setSimbriefId(e.target.value)}
+              placeholder="e.g. 123456"
+              disabled={saving}
+            />
           </div>
 
           <div className="flex gap-4 mt-6">
             <button
               onClick={handleSave}
-              disabled={saving || loadingRemote}
-              className={`flex-1 py-3.5 rounded-lg font-semibold shadow-lg transition-all duration-300 flex items-center justify-center ${
-                saving || loadingRemote
+              disabled={saving || loading || !pilotId}
+              className={`flex-1 py-3.5 rounded-lg font-semibold shadow-lg transition-all ${
+                saving || loading || !pilotId
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-[#b60c18] to-[#ea4256] text-white hover:shadow-xl hover:from-[#c21c28] hover:to-[#ea5266] transform hover:-translate-y-0.5'
+                  : 'bg-gradient-to-r from-[#b60c18] to-[#ea4256] text-white hover:from-[#c21c28] hover:to-[#ea5266]'
               }`}
             >
-              {saving ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  SAVING TO DATABASE...
-                </>
-              ) : (
-                'SAVE TO DATABASE'
-              )}
+              {saving ? 'SAVING…' : 'SAVE TO DATABASE'}
             </button>
             <button
               onClick={onClose}
               disabled={saving}
-              className="flex-1 py-3.5 bg-gray-700 text-gray-300 rounded-lg font-semibold hover:bg-gray-600 transition-all duration-300 transform hover:-translate-y-0.5"
+              className="flex-1 py-3.5 bg-gray-700 text-gray-300 rounded-lg font-semibold hover:bg-gray-600"
             >
               CANCEL
             </button>
           </div>
 
-          {loadingRemote && (
+          {loading && (
             <div className="flex items-center justify-center text-gray-400 mt-2">
-              <svg className="animate-spin h-5 w-5 mr-2 text-[#b60c18]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Querying database for existing settings...
+              Loading your profile…
             </div>
           )}
         </div>

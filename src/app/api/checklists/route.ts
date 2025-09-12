@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
+import { getDb } from "@/lib/db";
 
 const COLLECTION = "checklists"; // { pilotId, name, items:[{id,text,done,order}], updatedAt }
 
