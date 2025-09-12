@@ -14,11 +14,12 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
 /**
- * Dashboard (v1.3 • optimized, accessible, flicker-free)
+ * Dashboard (v2.0 • premium UI with new effects)
  */
 
 // Client-only heavy/visual components
 const SakuraPetals = dynamic(() => import("./SakuraPetals"), { ssr: false, loading: () => null });
+const FloatingCranes = dynamic(() => import("./FloatingCranes"), { ssr: false, loading: () => null });
 const SettingsModal = dynamic(() => import("./SettingsModal"), { ssr: false });
 const IFuelModal = dynamic(() => import("./IFuelModal"), { ssr: false });
 const WeatherModal = dynamic(() => import("./WeatherModal"), { ssr: false });
@@ -35,6 +36,7 @@ const CrewCenterModal = dynamic(() => import("./CrewcenterModal"), { ssr: false 
 /* Images */
 /* -------------------------------------------------------------------------- */
 import bg from "../../../public/Images/background.png";
+import bgDark from "../../../public/Images/background.png";
 import icon_profile from "../../../public/app-icons/profile.png";
 import icon_map from "../../../public/app-icons/map.png";
 import icon_navigraph from "../../../public/app-icons/navigraph.png";
@@ -243,6 +245,7 @@ export default function Dashboard() {
   const [countdown, setCountdown] = useState("");
 
   const [activeModal, setActiveModal] = useState<ModalKey>(null);
+  const [isHoveringHeader, setIsHoveringHeader] = useState(false);
 
   // Animations (memo to avoid re-alloc)
   const buttonTransition: Transition = useMemo(() => ({ delay: 0.03, type: "spring", stiffness: 300, damping: 15 }), []);
@@ -438,7 +441,7 @@ export default function Dashboard() {
   // Unified button/tile
   const ButtonTile = useMemo(
     () =>
-      React.memo(function ButtonTileInner({ children, onClick, href, external }: { children: React.ReactNode; onClick?: () => void; href?: string; external?: boolean }) {
+      React.memo(function ButtonTileInner({ children, onClick, href, external, id }: { children: React.ReactNode; onClick?: () => void; href?: string; external?: boolean; id: string }) {
         const base =
           "relative w-full aspect-square min-h-[96px] sm:min-h-[112px] md:min-h-[128px] lg:min-h-[144px] flex flex-col items-center justify-center font-medium rounded-3xl shadow-sm transition-all duration-300 hover:shadow-2xl border group overflow-hidden focus-within:ring-2 focus-within:ring-rose-400/50";
         const style = isDark ? "bg-gray-900/60 border-white/10 text-white hover:border-rose-400/40" : "bg-white/70 border-black/5 text-gray-900 hover:border-rose-300/60 backdrop-blur";
@@ -468,7 +471,14 @@ export default function Dashboard() {
         } as const;
 
         return (
-          <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} whileHover={{ y: -6 }} whileTap={{ scale: 0.98 }} transition={buttonTransition}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.96, y: 12 }} 
+            animate={{ opacity: 1, scale: 1, y: 0 }} 
+            whileHover={{ y: -6 }} 
+            whileTap={{ scale: 0.98 }} 
+            transition={buttonTransition}
+            data-tile-id={id}
+          >
             {href ? (
               <Link href={href} {...commonProps}>
                 {body}
@@ -489,12 +499,12 @@ export default function Dashboard() {
   return (
     <div className={`${poppins.className} relative w-full min-h-screen overflow-x-hidden transition-colors duration-300 ${isDark ? "bg-gray-950 text-white" : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900"}`}>
       {/* Background */}
-      <div className="fixed inset-0 z-0 opacity-20 dark:opacity-10">
-        <Image src={bg} alt="JAL Background" fill sizes="100vw" style={{ objectFit: "cover" }} priority />
+      <div className="fixed inset-0 z-0 opacity-20 dark:opacity-10 transition-opacity duration-700">
+        <Image src={isDark ? bgDark : bg} alt="JAL Background" fill sizes="100vw" style={{ objectFit: "cover" }} priority />
         {/* decorative gradients */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-24 w-[40rem] h-[40rem] rounded-full bg-rose-400/25 blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] rounded-full bg-amber-300/20 blur-3xl" />
+          <div className="absolute -top-24 -left-24 w-[40rem] h-[40rem] rounded-full bg-rose-400/25 blur-3xl animate-pulse-slow" />
+          <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] rounded-full bg-amber-300/20 blur-3xl animate-pulse-slower" />
         </div>
       </div>
 
@@ -504,7 +514,10 @@ export default function Dashboard() {
       )}
 
       {/* Background FX */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">{mounted && <SakuraPetals />}</div>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {mounted && <SakuraPetals />}
+        {mounted && <FloatingCranes />}
+      </div>
 
       {/* Header */}
       <motion.header
@@ -512,70 +525,97 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.02 }}
         className={`relative z-10 flex items-center justify-between w-full max-w-screen-xl mx-auto px-4 sm:px-6 py-4 ${isDark ? "bg-gray-900/70 border-white/10 text-white" : "bg-white/80 border-black/10 text-gray-900"} backdrop-blur-md border-b rounded-b-xl shadow-sm`}
+        onMouseEnter={() => setIsHoveringHeader(true)}
+        onMouseLeave={() => setIsHoveringHeader(false)}
       >
         <div className="flex items-center gap-4 sm:gap-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight jal-title-shine">Japan Airline Virtuals</h1>
-            <span className={`${isDark ? "text-rose-300" : "text-rose-600"} text-xs font-medium`}>Electronic Flight Bag</span>
+          <div className="relative">
+            <motion.div 
+              className="absolute -inset-4 bg-gradient-to-r from-rose-600/20 to-amber-400/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              animate={{ rotate: isHoveringHeader ? 360 : 0 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            />
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight jal-title-shine relative z-10">
+              Japan Airline Virtuals
+            </h1>
+            <span className={`${isDark ? "text-rose-300" : "text-rose-600"} text-xs font-medium relative z-10`}>Electronic Flight Bag</span>
           </div>
-          <span className={`inline-flex items-center px-3 py-1.5 rounded-full ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-black/10 text-gray-900"} border text-sm font-medium shadow-inner`}>
+          <motion.span 
+            className={`inline-flex items-center px-3 py-1.5 rounded-full ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-black/10 text-gray-900"} border text-sm font-medium shadow-inner`}
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          >
             <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" aria-hidden /> UTC{" "}
             <time suppressHydrationWarning>{utcTime}</time>
-          </span>
+          </motion.span>
         </div>
 
         {/* Right cluster: Theme toggle + Discord profile/login + Settings */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Theme */}
-          <button
+          <motion.button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${isDark ? "hover:bg-white/10 text-gray-200" : "hover:bg-black/5 text-gray-700"} transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60`}
             aria-label="Toggle theme"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
             <Icon icon={isDark ? "mdi:weather-sunny" : "mdi:weather-night"} className="text-xl" />
-          </button>
+          </motion.button>
 
           {/* Discord auth chip */}
           {user ? (
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"} shadow-inner`}>
+              <motion.div 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"} shadow-inner`}
+                whileHover={{ y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              >
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt="avatar" width={22} height={22} className="rounded-full" unoptimized />
+                  <motion.div whileHover={{ rotate: 5 }}>
+                    <Image src={avatarUrl} alt="avatar" width={22} height={22} className="rounded-full" unoptimized />
+                  </motion.div>
                 ) : (
                   <div className="w-[22px] h-[22px] rounded-full bg-white/20" />
                 )}
                 <span className="text-sm font-medium max-w-[9rem] truncate">{displayName}{pilotId ? ` • ${pilotId}` : ""}</span>
-              </div>
-              <button
+              </motion.div>
+              <motion.button
                 onClick={handleLogout}
                 className={`text-sm px-3 py-1.5 rounded-full border transition ${isDark ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white border-black/10 hover:bg-black/5"}`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Sign out
-              </button>
+              </motion.button>
             </div>
           ) : (
-            <button
+            <motion.button
               type="button"
               onClick={handleDiscordLogin}
               disabled={authBusy}
               className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-[#5865F2] hover:brightness-110 disabled:opacity-60 transition shadow-md"
               aria-label="Login with Discord"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-white">
                 <path d="M20.317 4.369A19.791 19.791 0 0016.558 3c-.2.363-.43.85-.589 1.231a18.27 18.27 0 00-4-.002c-.16-.382-.39-.87-.59-1.232A19.736 19.736 0 003.68 4.37C1.85 7.335 1.352 10.2 1.533 13.03c1.676 1.24 3.3 1.997 4.879 2.496.39-.535.739-1.11 1.04-1.717-.572-.217-1.12-.48-1.64-.786.137-.1.27-.205.399-.313 3.169 1.49 6.6 1.49 9.72 0 .13.108.263.213.399.313-.52.307-1.068.57-1.64.786.3.606.65 1.181 1.04 1.717 1.58-.5 3.204-1.257 4.88-2.497.238-3.62-.61-6.46-2.393-8.662zM9.295 12.348c-.949 0-1.724-.86-1.724-1.92s.761-1.927 1.724-1.927c.963 0 1.738.868 1.724 1.927 0 1.06-.761 1.92-1.724 1.92zm5.41 0c-.949 0-1.724-.86-1.724-1.92s.761-1.927 1.724-1.927c.963 0 1.738.868 1.724 1.927 0 1.06-.761 1.92-1.724 1.92z" />
               </svg>
               <span className="text-white font-semibold">Login</span>
-            </button>
+            </motion.button>
           )}
 
           {/* Settings shortcut */}
-          <button
+          <motion.button
             onClick={() => setActiveModal("settings")}
-            className="p-2 rounded-full bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-md hover:shadow-lg transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+            className="p-2 rounded-full bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-md hover:shadow-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
             aria-label="Settings"
+            whileHover={{ scale: 1.1, rotate: 15 }}
+            whileTap={{ scale: 0.95 }}
           >
             <Icon icon="mdi:cog" className="text-lg" />
-          </button>
+          </motion.button>
         </div>
       </motion.header>
 
@@ -596,19 +636,19 @@ export default function Dashboard() {
               );
               if ("modal" in b && (b as any).modal) {
                 return (
-                  <ButtonTile key={b.id} onClick={() => openModal((b as any).modal as ModalKey)}>
+                  <ButtonTile key={b.id} id={b.id} onClick={() => openModal((b as any).modal as ModalKey)}>
                     {commonInner}
                   </ButtonTile>
                 );
               }
               if ((b as any).href) {
                 return (
-                  <ButtonTile key={b.id} href={(b as any).href} external={(b as any).external}>
+                  <ButtonTile key={b.id} id={b.id} href={(b as any).href} external={(b as any).external}>
                     {commonInner}
                   </ButtonTile>
                 );
               }
-              return <ButtonTile key={b.id}>{commonInner}</ButtonTile>;
+              return <ButtonTile key={b.id} id={b.id}>{commonInner}</ButtonTile>;
             })}
           </motion.div>
 
@@ -657,7 +697,7 @@ export default function Dashboard() {
           <span>EFB Developed by Y. Zhong Jie</span>
           <span aria-hidden>•</span>
           <span className="flex items-center">
-            <Icon icon="mdi:flower" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-1`} /> v1.3.0
+            <Icon icon="mdi:flower" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-1`} /> v2.0.0
           </span>
         </div>
       </footer>
@@ -781,7 +821,18 @@ export default function Dashboard() {
       {/* Global Styles */}
       <style jsx global>{`
         html, body, #__next { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; }
-        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        @keyframes gradient-shift { 
+          0% { background-position: 0% 50%; } 
+          100% { background-position: 100% 50%; } 
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.4; }
+        }
+        @keyframes pulse-slower {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.35; }
+        }
         .jal-title-shine {
           background: linear-gradient(90deg, ${JAL_RED} 0%, #ea4256 50%, ${JAL_RED} 100%);
           background-size: 200% 100%;
@@ -791,6 +842,8 @@ export default function Dashboard() {
           text-shadow: 0 4px 30px rgba(255, 0, 72, 0.15);
         }
         .jal-toast { backdrop-filter: blur(12px); }
+        .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
+        .animate-pulse-slower { animation: pulse-slower 12s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
           * { animation: none !important; transition: none !important; }
         }
@@ -803,9 +856,13 @@ export default function Dashboard() {
 function SummaryCell({ title, value, theme }: { title: string; value?: React.ReactNode; theme: "light" | "dark" }) {
   const isDark = theme === "dark";
   return (
-    <div className={`${isDark ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"} p-3 rounded-lg transition-colors`}>
+    <motion.div 
+      className={`${isDark ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"} p-3 rounded-lg transition-colors`}
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+    >
       <p className={`${isDark ? "text-gray-300" : "text-gray-600"} text-xs font-medium mb-1`}>{title}</p>
       <p className="font-medium">{value}</p>
-    </div>
+    </motion.div>
   );
 }
