@@ -1,19 +1,29 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    /* Modern output for Next.js */
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "es2022"],
+
+    /* Core */
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
+
+    /* ESM + Next.js compatible */
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+
+    /* Optional: better interop/diagnostics */
+    "allowSyntheticDefaultImports": true,
+
+    /* Next plugin */
     "plugins": [{ "name": "next" }],
 
     /* สำคัญ! ต้องมีสองบรรทัดนี้ */
@@ -21,7 +31,10 @@
     "paths": {
       "@/*": ["src/*"],
       "@public/*": ["public/*"]
-    }
+    },
+
+    /* Types for Node env (helpful for process.env, etc.) */
+    "types": ["@types/node"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
