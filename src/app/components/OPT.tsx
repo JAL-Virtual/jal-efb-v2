@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import AnimatedModalBg from './AnimatedModalBg';
+import { Icon } from '@iconify/react';
 
 // --- Utility functions ---
 function toTonnes(val: string | number) {
@@ -11,7 +12,7 @@ function toTonnes(val: string | number) {
 function formatDateDMY(str: string) {
   if (!str) return '';
   const [y, m, d] = str.split('-');
-  return d && m && y ? `${d}:${m}:${y}` : str;
+  return d && m && y ? `${d}/${m}/${y}` : str;
 }
 function formatTimeHM(str: string) {
   if (!str) return '';
@@ -28,7 +29,7 @@ function parseIsoToDateTime(str: string) {
   const [year, month, day] = datePart.split('-');
   const [hour, min] = timePartRaw.split(':');
   return {
-    date: day && month && year ? `${day}:${month}:${year}` : '',
+    date: day && month && year ? `${day}/${month}/${year}` : '',
     time: hour && min ? `${hour}:${min}` : '',
   };
 }
@@ -126,12 +127,16 @@ export default function LoadsheetModal({
   simbriefId,
   loading = false,
   initialFields = {},
-  onSubmit,
+  onSubmit, // (ยังไม่ได้ใช้ในบล็อกนี้)
 }: Props) {
   const [fields, setFields] = useState<LoadsheetFields>({ ...defaultFields, ...initialFields });
   const [toast, setToast] = useState<{ message: string; success: boolean } | null>(null);
   const [isLoading, setIsLoading] = useState(loading);
   const [highlight, setHighlight] = useState(false);
+
+  // ใช้ตัวนี้เป็น SimBrief ID ที่ “ใช้งานจริง” (prop ถ้ามี > DB > ว่าง)
+  const [effectiveSimbriefId, setEffectiveSimbriefId] = useState<string>(simbriefId || '');
+  const [loadingSimbriefFromDb, setLoadingSimbriefFromDb] = useState(false);
 
   // Toast auto-hide
   useEffect(() => {
@@ -149,12 +154,58 @@ export default function LoadsheetModal({
     }
   }, [highlight]);
 
+  // sync เมื่อ prop simbriefId เปลี่ยน
+  useEffect(() => {
+    setEffectiveSimbriefId(simbriefId || '');
+  }, [simbriefId]);
+
+  // โหลด SimBrief ID จาก DB เมื่อเปิด modal และกรณี prop ว่าง
+  useEffect(() => {
+    if (!show) return;
+    if (simbriefId && simbriefId.trim() !== '') return; // มี prop แล้ว ไม่ต้องโหลด DB
+
+    let pilotId = '';
+    try {
+      if (typeof window !== 'undefined') {
+        pilotId = (localStorage.getItem('pilotId') || '').toUpperCase().trim();
+      }
+    } catch {
+      // ignore
+    }
+    if (!pilotId) return;
+
+    const fetchSimbriefFromDB = async () => {
+      try {
+        setLoadingSimbriefFromDb(true);
+        const res = await fetch(`/api/user-settings?pilotId=${encodeURIComponent(pilotId)}`, {
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (res.ok && json?.data) {
+          const sbid = (json.data.simbriefId || '').toString();
+          if (sbid && !effectiveSimbriefId) {
+            setEffectiveSimbriefId(sbid);
+            setToast({ message: `Loaded SimBrief ID: ${sbid}`, success: true });
+          }
+        }
+      } catch {
+        // ไม่ให้ UX พัง
+      } finally {
+        setLoadingSimbriefFromDb(false);
+      }
+    };
+
+    void fetchSimbriefFromDB();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show]);
+
   async function handleAutofill() {
     setIsLoading(true);
     setToast(null);
     try {
-      if (!simbriefId) throw new Error("SimBrief ID is not set!");
-      const sb = await onAutofill(simbriefId);
+      const sbid = (effectiveSimbriefId || '').trim();
+      if (!sbid) throw new Error('SimBrief ID is not set!');
+      const sb = await onAutofill(sbid);
 
       const isoDep =
         sb.general?.sched_out ||
@@ -199,121 +250,164 @@ export default function LoadsheetModal({
         originIcao: sb.origin?.icao_code || '',
         destinationIcao: sb.destination?.icao_code || '',
       });
-      setToast({ message: "✅ Autofilled from SimBrief.", success: true });
+      setToast({ message: 'Autofilled from SimBrief', success: true });
       setHighlight(true);
     } catch (e: any) {
-      setToast({ message: "❌ " + (e?.message || "Could not fetch SimBrief data."), success: false });
+      setToast({ message: e?.message || 'Could not fetch SimBrief data', success: false });
     }
     setIsLoading(false);
   }
+
+  const canAutofill = !!(effectiveSimbriefId && effectiveSimbriefId.trim() !== '');
 
   if (!show) return null;
   return (
     <Modal onClose={onClose} wide>
       <AnimatedModalBg />
 
-      {/* Toast Notification */}
+      {/* Toast Notification (iOS style) */}
       {toast && (
         <div
-          className={`fixed top-6 right-7 z-[9999] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 font-semibold text-lg transition-all duration-300
+          className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] px-5 py-3 rounded-lg flex items-center gap-2 font-medium text-sm transition-all duration-300 shadow-lg
             ${toast.success
-              ? "bg-[#282f0a]/95 text-[#ffe164] border border-[#ffcb05] shadow-yellow-400/50"
-              : "bg-[#2b181a]/95 text-[#ff4f4f] border border-[#f77] shadow-red-500/30"}
+              ? 'bg-[#34C759] text-white'
+              : 'bg-[#FF3B30] text-white'}
           `}
-          style={{
-            minWidth: 220,
-            maxWidth: 340,
-            animation: "fadeInUp 0.3s cubic-bezier(.24,1.44,.56,1)",
-          }}
+          style={{ animation: 'fadeInUp 0.3s cubic-bezier(.24,1.44,.56,1)' }}
         >
-          <span className="text-xl">{toast.success ? "✅" : "❌"}</span>
-          <span className="whitespace-pre-line">{toast.message}</span>
+          <Icon icon={toast.success ? 'mdi:check-circle' : 'mdi:alert-circle'} className="text-lg" />
+          <span>{toast.message}</span>
         </div>
       )}
 
-      <div
-        className="max-w-screen-lg mx-auto rounded-2xl shadow-2xl p-8 overflow-visible"
-        style={{
-          background: "linear-gradient(135deg, #16181b 75%, #1c2027 100%)",
-        }}
-      >
-        <h2 className="text-3xl font-bold mb-8 text-[#ffe164] tracking-widest text-center drop-shadow">
-          OPT / {fields.alignments}
-        </h2>
-        {/* Info grid with highlight animation */}
-        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-x-8 gap-y-8 mb-12 transition-all
-          ${highlight ? 'animate-glow' : ''}`}>
-          <InfoBox label="ORIGIN" value={fields.originIcao} />
-          <InfoBox label="DESTINATION" value={fields.destinationIcao} />
-          <InfoBox label="PIC" value={fields.pic} />
-          <InfoBox label="DATE" value={fields.flightDate} />
-          <InfoBox label="DEP TIME (Z)" value={fields.depTime} />
-          <InfoBox label="FLT TIME" value={fields.flightTime} />
-          <InfoBox label="REG" value={fields.reg} />
-          <InfoBox label="COST INDEX" value={fields.costIndex} />
-          <InfoBox label="SID (DEP)" value={formatSidStar(fields.sid, fields.sidTrans)} />
-          <InfoBox label="STAR (ARR)" value={formatSidStar(fields.star, fields.starTrans)} />
-          <InfoBox label="PLAN RWY (DEP/ARR)" value={`${fields.depRunway} / ${fields.arrRunway}`} />
-          <InfoBox label="ZFW / MAX" value={`${fields.estZfw} / ${fields.maxZfw}`} />
-          <InfoBox label="TOW / MAX" value={`${fields.estTow} / ${fields.maxTow}`} />
-          <InfoBox label="LAW / MAX" value={`${fields.estLdw} / ${fields.maxLdw}`} />
-          <InfoBox label="CARGO" value={fields.cargo} />
-          <InfoBox label="PASSENGER" value={fields.pax} />
+      <div className="w-full max-w-3xl mx-auto bg-white dark:bg-[#1C1C1E] rounded-2xl overflow-hidden shadow-xl">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center">
+            <div className="p-2 rounded-md bg-[#007AFF] mr-3">
+              <Icon icon="mdi:clipboard-list" className="text-white text-xl" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Loadsheet</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{fields.alignments}</p>
+            </div>
+          </div>
         </div>
-        {/* Route Section */}
-        <div className="mb-10">
-          <div className="mb-2 font-bold text-[#ffe164] tracking-wide text-lg">ROUTE</div>
-          <div className="rounded-xl bg-[#21242b] border-2 border-[#ffe164]/30 p-4 text-white text-base whitespace-pre-line break-words">{fields.route}</div>
-        </div>
-        {/* METAR/TAF Section */}
-        <div className="mb-10">
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="flex-1">
-              <div className="font-bold mb-1 text-[#ffe164] text-lg">DEPARTURE</div>
-              <div className="space-y-2">
+
+        {/* Main Content */}
+        <div className="px-6 py-4">
+          {/* Flight Information Grid */}
+          <div
+            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6 transition-all ${highlight ? 'animate-glow' : ''}`}
+          >
+            <InfoBox label="Origin" value={fields.originIcao} />
+            <InfoBox label="Destination" value={fields.destinationIcao} />
+            <InfoBox label="PIC" value={fields.pic} />
+            <InfoBox label="Date" value={fields.flightDate} />
+            <InfoBox label="Dep Time (Z)" value={fields.depTime} />
+            <InfoBox label="Flight Time" value={fields.flightTime} />
+            <InfoBox label="Registration" value={fields.reg} />
+            <InfoBox label="Cost Index" value={fields.costIndex} />
+            <InfoBox label="SID (Departure)" value={formatSidStar(fields.sid, fields.sidTrans)} />
+            <InfoBox label="STAR (Arrival)" value={formatSidStar(fields.star, fields.starTrans)} />
+            <InfoBox label="Runways" value={`${fields.depRunway} / ${fields.arrRunway}`} />
+            <InfoBox label="ZFW (T)" value={`${fields.estZfw} / ${fields.maxZfw}`} />
+            <InfoBox label="TOW (T)" value={`${fields.estTow} / ${fields.maxTow}`} />
+            <InfoBox label="LDW (T)" value={`${fields.estLdw} / ${fields.maxLdw}`} />
+            <InfoBox label="Cargo (T)" value={fields.cargo} />
+            <InfoBox label="Passengers" value={fields.pax} />
+          </div>
+
+          {/* Route Section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-gray-900 dark:text-white">Route</h3>
+              {effectiveSimbriefId && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  SimBrief ID: <b>{effectiveSimbriefId}</b>
+                </span>
+              )}
+            </div>
+            <div className="rounded-xl bg-gray-100 dark:bg-[#2C2C2E] p-4 text-gray-900 dark:text-white text-sm whitespace-pre-line break-words">
+              {fields.route || '-'}
+            </div>
+          </div>
+
+          {/* Weather Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h3 className="font-medium text-gray-900 dark:text-white mb-2">Departure Weather</h3>
+              <div className="space-y-3">
                 <div>
-                  <div className="text-xs font-semibold text-white mb-0">METAR</div>
-                  <div className="rounded bg-[#18191b] border border-[#ffe164]/20 p-2 text-xs text-white break-words">{fields.depMetar}</div>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">METAR</h4>
+                  <div className="rounded-lg bg-gray-100 dark:bg-[#2C2C2E] p-3 text-xs text-gray-900 dark:text-white break-words">
+                    {fields.depMetar || '-'}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-white mb-0">TAF</div>
-                  <div className="rounded bg-[#18191b] border border-[#ffe164]/20 p-2 text-xs text-white break-words">{fields.depTaf}</div>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">TAF</h4>
+                  <div className="rounded-lg bg-gray-100 dark:bg-[#2C2C2E] p-3 text-xs text-gray-900 dark:text-white break-words">
+                    {fields.depTaf || '-'}
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="flex-1">
-              <div className="font-bold mb-1 text-[#ffe164] text-lg">ARRIVAL</div>
-              <div className="space-y-2">
+            <div>
+              <h3 className="font-medium text-gray-900 dark:text-white mb-2">Arrival Weather</h3>
+              <div className="space-y-3">
                 <div>
-                  <div className="text-xs font-semibold text-white mb-0">METAR</div>
-                  <div className="rounded bg-[#18191b] border border-[#ffe164]/20 p-2 text-xs text-white break-words">{fields.arrMetar}</div>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">METAR</h4>
+                  <div className="rounded-lg bg-gray-100 dark:bg-[#2C2C2E] p-3 text-xs text-gray-900 dark:text-white break-words">
+                    {fields.arrMetar || '-'}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-white mb-0">TAF</div>
-                  <div className="rounded bg-[#18191b] border border-[#ffe164]/20 p-2 text-xs text-white break-words">{fields.arrTaf}</div>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">TAF</h4>
+                  <div className="rounded-lg bg-gray-100 dark:bg-[#2C2C2E] p-3 text-xs text-gray-900 dark:text-white break-words">
+                    {fields.arrTaf || '-'}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* Buttons */}
-        <div className="flex flex-col md:flex-row gap-4 mt-6">
+
+        {/* Footer Buttons */}
+        <div className="px-6 py-4 bg-gray-50 dark:bg-[#2C2C2E] flex flex-col sm:flex-row justify-end gap-3">
           <button
             onClick={handleAutofill}
-            className="flex-1 py-3 rounded-lg font-semibold shadow-md bg-gradient-to-r from-[#ffe164] to-[#d4af37] text-[#18191b] hover:scale-105 transition text-lg"
-            disabled={isLoading || !simbriefId}
+            disabled={isLoading || !canAutofill}
+            className="px-4 py-2 rounded-lg font-medium text-white bg-[#007AFF] hover:bg-[#0062CC] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            title={
+              loadingSimbriefFromDb && !effectiveSimbriefId
+                ? 'Loading SimBrief ID...'
+                : canAutofill
+                ? `Use SimBrief ID: ${effectiveSimbriefId}`
+                : 'No SimBrief ID'
+            }
           >
-            {isLoading ? "Fetching..." : "Autofill from SimBrief"}
+            {isLoading ? (
+              <>
+                <Icon icon="line-md:loading-twotone-loop" className="text-lg animate-spin" />
+                Fetching...
+              </>
+            ) : (
+              <>
+                <Icon icon="mdi:cloud-download" className="text-lg" />
+                {loadingSimbriefFromDb && !effectiveSimbriefId ? 'Loading SimBrief ID...' : 'Autofill from SimBrief'}
+              </>
+            )}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3C]"
+          >
+            Close
           </button>
         </div>
-        <button
-          onClick={onClose}
-          className="w-full mt-4 py-3 rounded-lg font-semibold shadow-md bg-[#262730] text-white hover:bg-[#373842] transition text-lg"
-        >
-          Close
-        </button>
       </div>
-      {/* Toast/Highlight CSS */}
+
+      {/* CSS keyframes */}
       <style jsx global>{`
         @keyframes fadeInUp {
           0% {
@@ -326,33 +420,22 @@ export default function LoadsheetModal({
           }
         }
         @keyframes glow-pop {
-          0% {
-            box-shadow: 0 0 0px #ffe164;
-          }
-          30% {
-            box-shadow: 0 0 28px 8px #ffe164;
-          }
-          80% {
-            box-shadow: 0 0 14px 2px #ffe16488;
-          }
-          100% {
-            box-shadow: 0 0 0px #ffe16400;
-          }
+          0% { background-color: rgba(0, 122, 255, 0); }
+          50% { background-color: rgba(0, 122, 255, 0.1); }
+          100% { background-color: rgba(0, 122, 255, 0); }
         }
-        .animate-glow {
-          animation: glow-pop 1.2s cubic-bezier(.4,1.6,.4,1) 1;
-        }
+        .animate-glow { animation: glow-pop 1.2s ease-in-out 1; }
       `}</style>
     </Modal>
   );
 }
 
-// InfoBox for each cell
+// InfoBox component
 function InfoBox({ label, value }: { label: string; value: string | undefined }) {
   return (
-    <div className="flex flex-col rounded-xl border bg-[#1c2027]/90 border-[#ffe164]/15 p-4 min-h-[72px] min-w-[120px] max-w-[180px] h-[72px] justify-between shadow-sm transition-all">
-      <span className="text-xs text-[#ffe164] font-bold mb-1 tracking-wider uppercase whitespace-nowrap">{label}</span>
-      <span className="text-[15px] text-white font-medium truncate">{value || '-'}</span>
+    <div className="flex flex-col rounded-xl bg-gray-50 dark:bg-[#2C2C2E] p-3">
+      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</span>
+      <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{value || '-'}</span>
     </div>
   );
 }

@@ -111,108 +111,163 @@ export default function IFuelModal({
   return (
     <Modal onClose={onClose} wide>
       <AnimatedModalBg />
-      <div className="max-w-xl mx-auto bg-gray-900 text-white p-8 rounded-2xl shadow-2xl border-2 border-[#b60c18]">
-        <h2 className="text-2xl font-bold mb-6 text-[#b60c18] tracking-wide text-center">
-          FUEL REQUEST AT RAMP
+      <div className="max-w-2xl mx-auto bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8 rounded-2xl shadow-2xl border border-gray-700 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#b60c18] to-[#ea4256]"></div>
+        <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#b60c18] opacity-20 rounded-full"></div>
+        <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-[#ea4256] opacity-20 rounded-full"></div>
+        
+        <h2 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-[#b60c18] to-[#ea4256] bg-clip-text text-transparent">
+          FUEL REQUEST
         </h2>
-        <div className="grid grid-cols-2 gap-5 mb-6">
-          <label className="text-sm col-span-2">Callsign</label>
-          <input
-            className="col-span-2 w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            value={fields.callsign}
-            onChange={e => setFields(f => ({ ...f, callsign: e.target.value }))}
-          />
+        <p className="text-gray-400 text-center mb-8 text-sm">AT RAMP - JAL VIRTUAL</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8 relative z-10">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Callsign</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              placeholder="e.g. JL123"
+              value={fields.callsign}
+              onChange={e => setFields(f => ({ ...f, callsign: e.target.value }))}
+            />
+          </div>
 
-          <label className="text-sm">Departure</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            value={fields.dep}
-            onChange={e => setFields(f => ({ ...f, dep: e.target.value.toUpperCase() }))}
-            maxLength={4}
-          />
-          <label className="text-sm">Arrival</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            value={fields.arr}
-            onChange={e => setFields(f => ({ ...f, arr: e.target.value.toUpperCase() }))}
-            maxLength={4}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Departure</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all uppercase"
+              placeholder="ICAO"
+              value={fields.dep}
+              onChange={e => setFields(f => ({ ...f, dep: e.target.value.toUpperCase() }))}
+              maxLength={4}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Arrival</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all uppercase"
+              placeholder="ICAO"
+              value={fields.arr}
+              onChange={e => setFields(f => ({ ...f, arr: e.target.value.toUpperCase() }))}
+              maxLength={4}
+            />
+          </div>
 
-          <label className="text-sm">ETOW (KG)</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            type="number"
-            min={0}
-            value={fields.etow}
-            onChange={e => setFields(f => ({ ...f, etow: e.target.value }))}
-          />
-          <label className="text-sm">MTOW (KG)</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            type="number"
-            min={0}
-            value={fields.mtow}
-            onChange={e => setFields(f => ({ ...f, mtow: e.target.value }))}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">ETOW (KG)</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              type="number"
+              min={0}
+              placeholder="Estimated TOW"
+              value={fields.etow}
+              onChange={e => setFields(f => ({ ...f, etow: e.target.value }))}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">MTOW (KG)</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              type="number"
+              min={0}
+              placeholder="Max TOW"
+              value={fields.mtow}
+              onChange={e => setFields(f => ({ ...f, mtow: e.target.value }))}
+            />
+          </div>
 
-          <label className="text-sm">MIN FUEL (KG)</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            type="number"
-            min={0}
-            value={fields.minFuel}
-            onChange={e => setFields(f => ({ ...f, minFuel: e.target.value }))}
-          />
-          <label className="text-sm">EXTRA FUEL (KG)</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            type="number"
-            min={0}
-            value={fields.extraFuel}
-            onChange={e => setFields(f => ({ ...f, extraFuel: e.target.value }))}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">MIN FUEL (KG)</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              type="number"
+              min={0}
+              placeholder="Minimum required"
+              value={fields.minFuel}
+              onChange={e => setFields(f => ({ ...f, minFuel: e.target.value }))}
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">EXTRA FUEL (KG)</label>
+            <input
+              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              type="number"
+              min={0}
+              placeholder="Additional fuel"
+              value={fields.extraFuel}
+              onChange={e => setFields(f => ({ ...f, extraFuel: e.target.value }))}
+            />
+          </div>
 
-          <label className="text-sm">TOTAL FUEL (KG)</label>
-          <input
-            className="w-full p-2 border-2 border-[#b60c18] rounded bg-gray-800 font-mono text-white"
-            value={totalFuel.toString()}
-            readOnly
-          />
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">TOTAL FUEL (KG)</label>
+            <div className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/40 backdrop-blur-sm text-white font-mono text-lg">
+              {totalFuel.toLocaleString()} KG
+            </div>
+          </div>
 
-          <label className="text-sm col-span-2">FUEL TYPE</label>
-          <div className="col-span-2 flex gap-4">
-            <button
-              type="button"
-              onClick={() => handleFuelType('JET A1')}
-              className={`flex-1 py-2 rounded-lg font-semibold border-2 transition text-lg ${
-                fields.fuelType === 'JET A1'
-                  ? 'bg-[#b60c18] text-white border-[#b60c18]'
-                  : 'bg-gray-800 text-white border-[#b60c18]/60'
-              }`}
-            >
-              JET A1
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFuelType('SAF')}
-              className={`flex-1 py-2 rounded-lg font-semibold border-2 transition text-lg ${
-                fields.fuelType === 'SAF'
-                  ? 'bg-[#b60c18] text-white border-[#b60c18]'
-                  : 'bg-gray-800 text-white border-[#b60c18]/60'
-              }`}
-            >
-              SAF
-            </button>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">FUEL TYPE</label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => handleFuelType('JET A1')}
+                className={`flex-1 py-3 rounded-lg font-semibold border transition-all ${
+                  fields.fuelType === 'JET A1'
+                    ? 'bg-gradient-to-r from-[#b60c18] to-[#d63c4c] text-white border-[#b60c18] shadow-lg shadow-[#b60c18]/30'
+                    : 'bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700/50'
+                }`}
+              >
+                JET A1
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFuelType('SAF')}
+                className={`flex-1 py-3 rounded-lg font-semibold border transition-all ${
+                  fields.fuelType === 'SAF'
+                    ? 'bg-gradient-to-r from-[#0cb654] to-[#2dd673] text-white border-[#0cb654] shadow-lg shadow-[#0cb654]/30'
+                    : 'bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700/50'
+                }`}
+              >
+                SUSTAINABLE AVIATION FUEL
+              </button>
+            </div>
           </div>
         </div>
-        <button
-          onClick={handleConfirm}
-          disabled={isSending}
-          className="w-full py-3 rounded-lg font-semibold shadow-md bg-gradient-to-r from-[#b60c18] to-[#ea4256] text-white hover:scale-105 transition text-lg"
-        >
-          {isSending ? "Sending..." : "CONFIRM FUEL"}
-        </button>
-        {feedback && <p className="mt-4 text-center text-[#b60c18] font-bold">{feedback}</p>}
+        
+        <div className="flex flex-col gap-4 relative z-10">
+          <button
+            onClick={handleConfirm}
+            disabled={isSending}
+            className="w-full py-3.5 rounded-lg font-semibold shadow-lg bg-gradient-to-r from-[#b60c18] to-[#ea4256] text-white hover:shadow-xl hover:from-[#c21c28] hover:to-[#ea5266] transition-all duration-300 transform hover:-translate-y-0.5 text-lg flex items-center justify-center"
+          >
+            {isSending ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                SENDING REQUEST...
+              </>
+            ) : (
+              'CONFIRM FUEL REQUEST'
+            )}
+          </button>
+          
+          {feedback && (
+            <div className={`p-3 rounded-lg text-center font-medium ${
+              feedback.includes("✅") 
+                ? "bg-green-900/30 text-green-400 border border-green-800/50" 
+                : "bg-red-900/30 text-red-400 border border-red-800/50"
+            }`}>
+              {feedback}
+            </div>
+          )}
+        </div>
       </div>
     </Modal>
   );

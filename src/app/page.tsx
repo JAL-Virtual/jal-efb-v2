@@ -8,10 +8,8 @@ import Dashboard from './components/Dashboard';
 
 export default function HomePage() {
   const [entered, setEntered] = useState(false);
-
   const flight = { dpt: 'Japan', arr: 'Airline Virtual' };
 
-  // Animation variants for slide up
   const slideVariants = {
     initial: { y: '100%', opacity: 0 },
     animate: { y: 0, opacity: 1 },
