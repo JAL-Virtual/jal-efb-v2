@@ -2,8 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      "cdn.discordapp.com", // ✅ allow Discord avatars
+    // ✅ use remotePatterns instead of deprecated `domains`
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com", // allow Discord avatars
+      },
     ],
   },
 };
