@@ -16,9 +16,9 @@ type Props = {
 
 /* ----------------------------- helpers ---------------------------------- */
 function pickName(payload: any): string | undefined {
-  // payload = *crew json* (not the wrapper)
   return (
     payload?.data?.name ||
+    payload?.data?.user?.name ||
     payload?.user?.name ||
     payload?.name ||
     payload?.pilot?.name ||
@@ -26,15 +26,15 @@ function pickName(payload: any): string | undefined {
   );
 }
 
-function pickIdRaw(payload: any): string | number | undefined {
-  // try a bunch of common shapes
+function pickRawId(payload: any): string | number | undefined {
   return (
+    payload?.data?.id ??
     payload?.data?.pilot_id ??
     payload?.data?.pilotid ??
-    payload?.user?.pilot_id ??
-    payload?.user?.pilotid ??
-    payload?.pilot?.id ??
+    payload?.user?.id ??
     payload?.id ??
+    payload?.pilot_id ??
+    payload?.pilotid ??
     undefined
   );
 }
@@ -60,7 +60,7 @@ const SettingsModal: React.FC<Props> = ({
   initialHoppieId,
   initialSimbriefId,
 }) => {
-  // Locked ID we use for DB (prefer API → fallback session)
+  // Locked ID for this session (resolved from JAL API)
   const [pilotId, setPilotId] = useState(initialPilotId || '');
 
   // Mongo-backed fields
@@ -72,9 +72,8 @@ const SettingsModal: React.FC<Props> = ({
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // From API (NOT Mongo): name (and we also try to get ID from API)
+  // From API (NOT Mongo): name only
   const [jalName, setJalName] = useState<string | null>(null);
-  const [apiPilotId, setApiPilotId] = useState<string | null>(null);
 
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -83,22 +82,6 @@ const SettingsModal: React.FC<Props> = ({
     const t = setTimeout(() => setSuccessMsg(null), ms);
     return () => clearTimeout(t);
   }, []);
-
-  /** Resolve Pilot ID from session (/api/auth/me) with fallback to props. */
-  const resolvePilotIdFromSession = useCallback(async (): Promise<string | null> => {
-    try {
-      const res = await fetch('/api/auth/me', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
-      const data = await res.json();
-      if (res.ok) {
-        const jal = data?.user?.jalId?.toString().toUpperCase().trim();
-        if (jal) return jal;
-      }
-    } catch {
-      /* ignore; use fallback */
-    }
-    const fallback = (initialPilotId || '').toUpperCase().trim();
-    return fallback || null;
-  }, [initialPilotId]);
 
   /** Load Hoppie/SimBrief from MongoDB for this pilotId. */
   const loadMongoSettings = useCallback(
@@ -127,36 +110,36 @@ const SettingsModal: React.FC<Props> = ({
     [flashSuccess]
   );
 
-  /** Fetch NAME + (preferable) ID from JAL API using localStorage('jalApiKey'). */
-  const fetchPilotFromApi = useCallback(async (): Promise<{ name?: string | null; jalId?: string | null }> => {
+  /** Fetch NAME + ID from JAL API using localStorage('jalApiKey'). */
+  const fetchPilotFromApi = useCallback(async (): Promise<{ name?: string; jalId?: string } | null> => {
     try {
       const apiKey = typeof window !== 'undefined' ? localStorage.getItem('jalApiKey') : null;
-      if (!apiKey) return { name: null, jalId: null };
-
+      if (!apiKey) {
+        setErrMsg('Missing API key. Please sign in from the landing page.');
+        return null;
+      }
       const res = await fetch('/api/jal/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
         body: JSON.stringify({ apiKey }),
       });
-      const wrapper = await res.json().catch(() => ({}));
-      // proxy shape = { data: <crew json> }
-      const crew = wrapper?.data ?? {};
-      const name = pickName(crew) ?? null;
-      const apiId = formatJalId(pickIdRaw(crew));
-
-      if (!res.ok) return { name: null, jalId: null };
-      return { name, jalId: apiId };
-    } catch {
-      return { name: null, jalId: null };
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrMsg(json?.error || 'Unable to fetch profile from JAL API');
+        return null;
+      }
+      const name = pickName(json);
+      const rawId = pickRawId(json);
+      const jalId = formatJalId(rawId);
+      return { name, jalId: jalId || undefined } as any;
+    } catch (e: any) {
+      setErrMsg(e?.message || 'Network error calling JAL API');
+      return null;
     }
   }, []);
 
-  /** On open: resolve IDs and load data:
-   *  1) get sessionId
-   *  2) fetch API {name, apiId}; if apiId found, override pilotId
-   *  3) load Mongo using the final pilotId
-   */
+  /** On open: fetch from JAL API to resolve (name,id) → then load Mongo. */
   useEffect(() => {
     if (!show) return;
 
@@ -168,54 +151,39 @@ const SettingsModal: React.FC<Props> = ({
     setHoppieId(initialHoppieId || '');
     setSimbriefId(initialSimbriefId || '');
     setJalName(null);
-    setApiPilotId(null);
 
     let cancelled = false;
     (async () => {
       setLoading(true);
 
-      const sessionId = await resolvePilotIdFromSession();
+      const fromApi = await fetchPilotFromApi();
       if (cancelled) return;
 
-      if (!sessionId) {
+      // Prefer ID from API; else fallback to initial prop (normalized)
+      const resolvedId =
+        fromApi?.jalId ||
+        formatJalId(initialPilotId) ||
+        null;
+
+      if (!resolvedId) {
         setErrMsg('Unable to resolve your JAL Pilot ID from the server.');
         setLoading(false);
         return;
       }
-      // start with session id
-      let finalId = sessionId;
-      setPilotId(sessionId);
 
-      // pull from API
-      const { name, jalId } = await fetchPilotFromApi();
-      if (cancelled) return;
+      setPilotId(resolvedId);
+      if (fromApi?.name) setJalName(fromApi.name);
 
-      if (name) setJalName(name);
-      if (jalId) {
-        setApiPilotId(jalId);
-        // prefer API ID if present and valid
-        finalId = jalId;
-        setPilotId(jalId);
-      }
-
-      await loadMongoSettings(finalId);
+      await loadMongoSettings(resolvedId);
       if (!cancelled) setLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [
-    show,
-    initialPilotId,
-    initialHoppieId,
-    initialSimbriefId,
-    resolvePilotIdFromSession,
-    fetchPilotFromApi,
-    loadMongoSettings,
-  ]);
+  }, [show, initialPilotId, initialHoppieId, initialSimbriefId, fetchPilotFromApi, loadMongoSettings]);
 
-  // pilotId is read-only in UI, but we still validate existence
+  // pilotId is read-only in UI (locked), but we still validate existence
   function validate() {
     const id = (pilotId || '').trim().toUpperCase();
     if (!id) return 'Missing JAL Pilot ID.';
@@ -235,7 +203,7 @@ const SettingsModal: React.FC<Props> = ({
     try {
       setSaving(true);
       const body = {
-        pilotId: pilotId.toUpperCase().trim(), // <- will be API ID if available
+        pilotId: pilotId.toUpperCase().trim(),
         hoppieId: (hoppieId || '').trim(),
         simbriefId: (simbriefId || '').trim(),
       };
@@ -261,9 +229,8 @@ const SettingsModal: React.FC<Props> = ({
 
   if (!show) return null;
 
-  // Display prefers API name & ID; pilotId state already uses API ID when present
   const displayName = jalName ?? '—';
-  const displayId = pilotId ? formatJalId(pilotId) : '—';
+  const displayId = formatJalId(pilotId) ?? '—';
   const displayCombined = `${displayName} | ${displayId}`;
 
   return (
@@ -278,7 +245,7 @@ const SettingsModal: React.FC<Props> = ({
           PILOT PROFILE SETTINGS
         </h2>
         <p className="text-gray-400 text-center mb-8 text-sm">
-          Name/ID from JAL API (fallback session) • Hoppie/SimBrief stored in database
+          Name from JAL API • Hoppie/SimBrief stored in database
         </p>
 
         {errMsg && (
@@ -293,7 +260,7 @@ const SettingsModal: React.FC<Props> = ({
         )}
 
         <div ref={formRef} className="flex flex-col gap-6 relative z-10">
-          {/* Name | JAL ID — read-only (name/id from API if available; id falls back to session) */}
+          {/* Name | JAL ID — read-only (name & id from JAL API) */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-300">PILOT (name | JAL ID)</label>
             <input
@@ -304,7 +271,7 @@ const SettingsModal: React.FC<Props> = ({
               aria-label="Pilot name and JAL ID"
             />
             <p className="text-xs text-gray-500">
-              Name/ID fetched from crew.jalvirtual.com using your API key. If API ID isn&apos;t available, we keep your session ID.
+              Name & ID are fetched from crew.jalvirtual.com API using your API key; Hoppie/SimBrief are stored in DB.
             </p>
           </div>
 
