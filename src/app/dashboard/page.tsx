@@ -10,10 +10,11 @@ import { motion, AnimatePresence, Transition } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 
 /**
- * Dashboard (v2.3 • API-key auth + welcome name via proxy /api/jal/user)
- * - Reads `jalApiKey` from localStorage
+ * Dashboard (v2.4 • no pilotId; local-state + SettingsModal storage)
+ * - Reads API key from either localStorage 'jalApiKey' (legacy) or 'jal_apiKey' (SettingsModal)
  * - Verifies via /api/auth/verify
- * - Fetches real display name from /api/jal/user (server proxy) → uses data.name
+ * - Fetches real display name from /api/jal/user (server proxy)
+ * - pilotId + ACARS removed; using hoppieId only (from SettingsModal keys)
  */
 
 // Client-only heavy/visual components
@@ -32,7 +33,7 @@ const NotamModal = dynamic(() => import("../components/NotamsModal").then(m => m
 const CrewCenterModal = dynamic(() => import("../components/CrewcenterModal").then(m => m.default), { ssr: false });
 
 /* -------------------------------------------------------------------------- */
-/* Images (local in /public — ไม่ต้องตั้ง remotePatterns) */
+/* Images (local in /public) */
 /* -------------------------------------------------------------------------- */
 import bg from "../../../public/Images/background.png";
 import bgDark from "../../../public/Images/background.png";
@@ -135,8 +136,6 @@ export type LoadsheetFields = {
   route?: string;
 };
 
-type AcarsStatus = { status_text?: string; flight_phase?: string };
-
 type ModalKey =
   | "settings"
   | "fuel"
@@ -214,19 +213,36 @@ export default function Dashboard() {
   const [user, setUser] = useState<{ jalId?: string; name?: string } | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
 
+  // Settings managed locally (and also saved by SettingsModal):
+  const [hoppieId, setHoppieId] = useState<string>("");
+  const [simbriefId, setSimbriefId] = useState<string>("");
+
   useEffect(() => {
     let alive = true;
 
     (async () => {
       try {
-        const stored = typeof window !== "undefined" ? localStorage.getItem("jalApiKey") : null;
+        // Prefer legacy key first for backward compatibility, then SettingsModal key
+        const legacyKey = typeof window !== "undefined" ? localStorage.getItem("jalApiKey") : null;
+        const modalKey = typeof window !== "undefined" ? localStorage.getItem("jal_apiKey") : null;
+        const stored = legacyKey || modalKey;
+
+        // Pull user flight-related settings saved by SettingsModal
+        const savedHop = typeof window !== "undefined" ? localStorage.getItem("jal_hoppieId") : null;
+        const savedSim = typeof window !== "undefined" ? localStorage.getItem("jal_simbriefId") : null;
+        setHoppieId(savedHop || "");
+        setSimbriefId(savedSim || "");
+
         if (!stored) {
           router.replace("/");
           return;
         }
+
+        // Ensure legacy key is set so existing auth flow keeps working
+        try { localStorage.setItem("jalApiKey", stored); } catch {}
         setApiKey(stored);
 
-        // 1) verify via internal route (ถ้าต้องการให้มันยังทำงานร่วมกับระบบเดิม)
+        // 1) verify via internal route
         const res = await fetch("/api/auth/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -242,13 +258,12 @@ export default function Dashboard() {
           return;
         }
 
-        // provisional info
         const provisional: { jalId?: string; name?: string } = {
           jalId: verifyData?.user?.pilot_id || verifyData?.user?.pilotid || verifyData?.user?.id,
           name: verifyData?.user?.name || verifyData?.user?.fname,
         };
 
-        // 2) fetch from proxy (จะได้ data.name ชัวร์ ไม่ติด CORS)
+        // 2) fetch from proxy (data.name guaranteed; no CORS)
         try {
           const ures = await fetch("/api/jal/user", {
             method: "POST",
@@ -263,11 +278,9 @@ export default function Dashboard() {
             const pid = pickPilotId(payload);
             setUser({ jalId: pid ?? provisional.jalId, name: name ?? provisional.name });
           } else {
-            // ถ้า upstream 4xx/5xx ก็ fallback
             setUser(provisional);
           }
         } catch {
-          // network/cors/etc. fallback
           setUser(provisional);
         }
       } catch {
@@ -283,7 +296,11 @@ export default function Dashboard() {
   const handleLogout = useCallback(async () => {
     setAuthBusy(true);
     try {
-      if (typeof window !== "undefined") localStorage.removeItem("jalApiKey");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("jalApiKey");
+        // also clear the SettingsModal variant to be safe on sign out
+        localStorage.removeItem("jal_apiKey");
+      }
     } catch {}
     toast("Signed out", { icon: "👋" });
     router.replace("/");
@@ -293,16 +310,13 @@ export default function Dashboard() {
     setAuthBusy(false);
   }, [router]);
 
-  // --- UTC clock & Acars ----------------------------------------------------
+  // --- UTC clock -----------------------------------------------------------
   const [utcTime, setUtcTime] = useState<string>(() => {
     if (typeof window === "undefined") return "--:--";
     return new Date().toISOString().substr(11, 5);
   });
 
-  const [pilotId, setPilotId] = useState("");
-  const [simbriefId, setSimbriefId] = useState("");
   const [flight, setFlight] = useState({ dpt: "-", arr: "-" });
-  const [acarsStatus, setAcarsStatus] = useState<AcarsStatus>({});
 
   const [loadsheetData, setLoadsheetData] = useState<Partial<LoadsheetFields>>({});
   const [countdown, setCountdown] = useState("");
@@ -322,12 +336,15 @@ export default function Dashboard() {
     []
   );
 
-  // Load saved settings
+  // ====== NO localStorage for IDs here; SettingsModal owns persistence ======
+  // Load hoppieId/simbriefId once at mount (mirrors SettingsModal keys)
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      setPilotId(localStorage.getItem("pilotId") || "");
-      setSimbriefId(localStorage.getItem("simbriefId") || "");
+      const savedHop = localStorage.getItem("jal_hoppieId") || "";
+      const savedSim = localStorage.getItem("jal_simbriefId") || "";
+      setHoppieId(savedHop);
+      setSimbriefId(savedSim);
     } catch {}
   }, []);
 
@@ -358,28 +375,6 @@ export default function Dashboard() {
     setUtcTime(new Date().toISOString().substr(11, 5));
   }, 60_000);
 
-  // ACARS fetch
-  useEffect(() => {
-    if (!pilotId) return;
-    let cancelled = false;
-    const fetchAcars = async () => {
-      try {
-        const response = await fetch(`https://crew.jalvirtual.com/api/acars?pilotId=${encodeURIComponent(pilotId)}`);
-        if (!response.ok) throw new Error("ACARS HTTP error");
-        const data = await response.json();
-        if (!cancelled) setAcarsStatus(data);
-      } catch {}
-    };
-    fetchAcars();
-    const iv = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") fetchAcars();
-    }, 30_000);
-    return () => {
-      cancelled = true;
-      clearInterval(iv);
-    };
-  }, [pilotId]);
-
   // SimBrief fetch
   async function fetchSimbrief(id: string) {
     try {
@@ -391,7 +386,7 @@ export default function Dashboard() {
     }
   }
 
-  // Update flight & loadsheet
+  // Update flight & loadsheet (driven by simbriefId only)
   useEffect(() => {
     let ignore = false;
     if (!simbriefId) {
@@ -462,15 +457,14 @@ export default function Dashboard() {
     });
   }, []);
 
-  // Save settings
+  // Save settings (from SettingsModal)
   const handleSaveSettings = useCallback(
-    (p: string, s: string) => {
-      setPilotId(p);
-      setSimbriefId(s);
-      try {
-        localStorage.setItem("pilotId", p);
-        localStorage.setItem("simbriefId", s);
-      } catch {}
+    (api: string, hop: string, sim: string) => {
+      setApiKey(api);
+      setHoppieId(hop);
+      setSimbriefId(sim);
+      // Ensure verify still reads the expected key name
+      try { localStorage.setItem("jalApiKey", api); } catch {}
       toast.success("Settings Saved!", {
         icon: "✅",
         style: {
@@ -561,9 +555,9 @@ export default function Dashboard() {
 
   // derive display name (prefer data.name from proxy)
   const userDisplay = useMemo(() => {
-    if (user?.name) return user.name;        // ✅ ควรเห็น "Welcome, {data.name}"
+    if (user?.name) return user.name;        // ✅ prefer real display name
     if (user?.jalId) return String(user.jalId);
-    if (apiKey) return maskKey(apiKey);      // fallback ขั้นสุดท้าย
+    if (apiKey) return maskKey(apiKey);      // fallback
     return "Pilot";
   }, [user, apiKey]);
 
@@ -719,7 +713,7 @@ export default function Dashboard() {
                   <Icon icon="mdi:clipboard-text" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-2`} />
                   Loadsheet Summary
                 </h3>
-                <span className={`text-[11px] sm:text-xs px-2 py-1 ${isDark ? "bg-white/5 text-white" : "bg-black/5 text-gray-900"} rounded-full`}>SimBrief ID: {simbriefId}</span>
+                <span className={`${isDark ? "bg-white/5 text-white" : "bg-black/5 text-gray-900"} text-[11px] sm:text-xs px-2 py-1 rounded-full`}>SimBrief ID: {simbriefId}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-sm">
                 <SummaryCell title="Dep UTC" value={loadsheetData.date ? new Date(loadsheetData.date).toISOString().substr(11, 5) : "-"} theme={isDark ? "dark" : "light"} />
@@ -750,7 +744,7 @@ export default function Dashboard() {
           <span>EFB Developed by Y. Zhong Jie</span>
           <span aria-hidden>•</span>
           <span className="flex items-center">
-            <Icon icon="mdi:flower" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-1`} /> v2.3.0
+            <Icon icon="mdi:flower" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-1`} /> v2.4.0
           </span>
         </div>
       </footer>
@@ -775,7 +769,14 @@ export default function Dashboard() {
         {/* settings */}
         {activeModal === "settings" && (
           <motion.div key="settings" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <SettingsModal show onClose={() => setActiveModal(null)} onSave={handleSaveSettings} initialPilotId={pilotId} initialSimbriefId={simbriefId} initialHoppieId={""} />
+            <SettingsModal
+              show
+              onClose={() => setActiveModal(null)}
+              onSave={handleSaveSettings}
+              initialApiKey={apiKey}
+              initialHoppieId={hoppieId}
+              initialSimbriefId={simbriefId}
+            />
           </motion.div>
         )}
 
@@ -813,7 +814,7 @@ export default function Dashboard() {
                 const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(id)}&json=v2`, { cache: "no-store" });
                 return res.json();
               }}
-              hoppieId={pilotId}
+              hoppieId={hoppieId}
               simbriefId={simbriefId}
               onSubmit={async () => {
                 toast.success("Loadsheet Sent!", {
@@ -850,7 +851,7 @@ export default function Dashboard() {
                 const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(id)}&json=v2`, { cache: "no-store" });
                 return res.json();
               }}
-              hoppieId={pilotId}
+              hoppieId={hoppieId}
               simbriefId={simbriefId}
               onSubmit={async () => {
                 toast.success("OPT Sent!", {
