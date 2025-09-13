@@ -1,3 +1,4 @@
+// src/lib/db.ts
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
@@ -22,5 +23,15 @@ export async function dbConnect() {
     cached!.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false } as any);
   }
   cached!.conn = await cached!.promise;
-  return cached!.conn;
+  return cached!.conn; // typeof mongoose
+}
+
+/**
+ * getDb() สำหรับโค้ดที่คาดหวัง native MongoDB Database object
+ * ใช้ร่วมกับโค้ดเดิมที่ทำงานแบบ collection-level ได้เลย
+ */
+export async function getDb() {
+  const m = await dbConnect();
+  // m.connection.db คือ native Db ของ MongoDB driver
+  return (m as any).connection.db as any; // เลือก any เพื่อเลี่ยงต้องติดตั้ง @types/mongodb เพิ่ม
 }
