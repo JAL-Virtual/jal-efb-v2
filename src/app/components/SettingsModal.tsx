@@ -1,3 +1,4 @@
+// src/app/components/SettingsModal.tsx
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -7,39 +8,13 @@ import AnimatedModalBg from './AnimatedModalBg';
 type Props = {
   show: boolean;
   onClose: () => void;
-  // Dashboard ยังเรียก onSave(pilotId, simbriefId) อยู่ — เราจะส่ง pilotId ที่ resolve ได้กลับไป (แต่ไม่โชว์ใน UI)
-  onSave: (pilotId: string, simbriefId: string) => void;
-
-  /** fallback-only (ไม่แสดงผลแล้ว) */
-  initialPilotId: string;
+  // เปลี่ยน signature: ส่ง apiKey + simbriefId กลับ
+  onSave: (apiKey: string, simbriefId: string) => void;
+  // ยังรับค่าเริ่มต้นสำหรับ Hoppie/SimBrief ได้ (ถ้าจะตั้ง)
   initialHoppieId: string;
   initialSimbriefId: string;
 };
 
-/* ----------------------------- helpers ---------------------------------- */
-function normalizeJalId(v: unknown): string | null {
-  if (v === undefined || v === null) return null;
-  let s = String(v).trim();
-  if (!s) return null;
-  if (/^JAL[0-9A-Z]+$/i.test(s)) return s.toUpperCase();
-  if (/^\d+$/.test(s)) return `JAL${s}`;
-  s = s.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-  if (!s.startsWith('JAL')) s = `JAL${s}`;
-  return s;
-}
-
-/** crew API id lives under many names; try a bunch */
-function pickCrewId(payload: any): unknown {
-  const d = payload?.data ?? payload?.user ?? payload ?? {};
-  return d.id ?? d.pilot_id ?? d.pilotId ?? d.pilotid ?? d.user_id ?? d.vid ?? d.callsign;
-}
-
-function pickCrewName(payload: any): string | undefined {
-  const d = payload?.data ?? payload?.user ?? payload ?? {};
-  return d.name ?? d.fullname ?? d.full_name ?? d.display_name ?? undefined;
-}
-
-// mask API key like ABCD••••WXYZ
 function maskKey(key?: string | null) {
   const k = (key ?? '').trim();
   if (!k) return '';
@@ -47,23 +22,16 @@ function maskKey(key?: string | null) {
   return `${k.slice(0, 4)}••••${k.slice(-4)}`;
 }
 
-/* ------------------------------------------------------------------------ */
 const SettingsModal: React.FC<Props> = ({
   show,
   onClose,
   onSave,
-  initialPilotId,
   initialHoppieId,
   initialSimbriefId,
 }) => {
-  // ===== API KEY (จาก localStorage) — โชว์ใน UI แบบ mask =====
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
 
-  // ===== Hidden: JAL ID (resolve จาก crew API ด้วย apiKey) — ไม่โชว์ =====
-  const [pilotId, setPilotId] = useState<string>('');
-
-  // ===== Mongo-backed fields =====
   const [hoppieId, setHoppieId] = useState(initialHoppieId || '');
   const [simbriefId, setSimbriefId] = useState(initialSimbriefId || '');
 
@@ -80,130 +48,75 @@ const SettingsModal: React.FC<Props> = ({
     return () => clearTimeout(t);
   }, []);
 
-  /** อ่านโปรไฟล์ผ่าน proxy route /api/jal/user โดยใช้ API Key */
-  const fetchCrewProfile = useCallback(async (key: string): Promise<{ id: string | null; name: string | null }> => {
-    const res = await fetch('/api/jal/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({ apiKey: key }),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      console.debug('crew user error', res.status, json);
-      return { id: null, name: null };
-    }
-    const rawId = pickCrewId(json);
-    const name = pickCrewName(json) ?? null;
-    const id = normalizeJalId(rawId);
-    return { id, name };
-  }, []);
-
-  /** โหลดค่า Hoppie/SimBrief จาก MongoDB โดยอ้างอิง pilotId ที่ resolve ได้ (แต่อย่าโชว์ pilotId) */
-  const loadMongoSettings = useCallback(
-    async (pid: string) => {
-      try {
-        const res = await fetch(`/api/user-settings?pilotId=${encodeURIComponent(pid)}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        const data = await res.json();
-        if (res.ok && data?.data) {
-          setHoppieId(data.data.hoppieId || '');
-          setSimbriefId(data.data.simbriefId || '');
-          flashSuccess('Loaded your saved IDs.');
-        } else if (res.status === 404) {
-          setHoppieId('');
-          setSimbriefId('');
-        } else {
-          throw new Error(data?.error || 'Failed to fetch settings');
-        }
-      } catch (e: any) {
-        setErrMsg(e?.message || 'Unable to load settings.');
-      }
-    },
-    [flashSuccess]
-  );
-
-  /** เปิดโมดัล: อ่าน API Key จาก localStorage → resolve pilotId จาก API → โหลด Mongo */
+  // เปิดโมดัล: โหลด apiKey จาก localStorage → ลองอ่านจาก DB ด้วย apiKey
   useEffect(() => {
     if (!show) return;
 
     setErrMsg(null);
     setSuccessMsg(null);
-
-    // reset to props ขณะกำลัง resolve
-    setPilotId(initialPilotId || '');
     setHoppieId(initialHoppieId || '');
     setSimbriefId(initialSimbriefId || '');
 
     let cancelled = false;
     (async () => {
       setLoading(true);
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('jalApiKey') || '' : '';
+      setApiKey(stored);
 
-      const key = typeof window !== 'undefined' ? localStorage.getItem('jalApiKey') || '' : '';
-      setApiKey(key);
+      if (stored) {
+        try {
+          const res = await fetch(`/api/user-settings?apiKey=${encodeURIComponent(stored)}`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          const json = await res.json().catch(() => ({}));
+          if (cancelled) return;
 
-      if (!key) {
-        setErrMsg('No API Key found. Please sign in on the landing screen.');
-        setLoading(false);
-        return;
+          if (res.ok && json?.data) {
+            setHoppieId(json.data.hoppieId || '');
+            setSimbriefId(json.data.simbriefId || '');
+            flashSuccess('Loaded your saved IDs.');
+          } else if (res.status !== 404) {
+            setErrMsg(json?.error || 'Failed to fetch settings');
+          }
+        } catch (e: any) {
+          if (!cancelled) setErrMsg(e?.message || 'Failed to fetch settings');
+        }
       }
-
-      const profile = await fetchCrewProfile(key);
-
-      let pid = profile.id ?? null;
-      if (!pid) pid = normalizeJalId(initialPilotId);
-      if (cancelled) return;
-
-      if (!pid) {
-        setErrMsg('Unable to resolve your account from the API key.');
-        setLoading(false);
-        return;
-      }
-
-      setPilotId(pid);
-      await loadMongoSettings(pid);
-
       if (!cancelled) setLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [show, initialPilotId, initialHoppieId, initialSimbriefId, fetchCrewProfile, loadMongoSettings]);
+  }, [show, initialHoppieId, initialSimbriefId, flashSuccess]);
 
   const handleSave = async () => {
-    if (!apiKey) {
-      setErrMsg('No API Key — please sign in again.');
+    if (!apiKey.trim()) {
+      setErrMsg('Please paste your API Key.');
       return;
     }
-    if (!pilotId) {
-      setErrMsg('Could not resolve your account from the API Key.');
-      return;
-    }
-
     setErrMsg(null);
     setSuccessMsg(null);
-
+    setSaving(true);
     try {
-      setSaving(true);
-      const body = {
-        pilotId: pilotId.toUpperCase(), // ใช้ผูกข้อมูลใน DB แต่ไม่โชว์ใน UI
-        hoppieId: (hoppieId || '').trim(),
-        simbriefId: (simbriefId || '').trim(),
-      };
-
       const res = await fetch('/api/user-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          apiKey: apiKey.trim(),
+          hoppieId: (hoppieId || '').trim(),
+          simbriefId: (simbriefId || '').trim(),
+        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `Server error: ${res.status}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || `Server error: ${res.status}`);
+
+      // เก็บ apiKey ลง localStorage เพื่อให้ส่วนอื่นใช้ต่อได้
+      if (typeof window !== 'undefined') localStorage.setItem('jalApiKey', apiKey.trim());
 
       flashSuccess('Saved!');
-      onSave(body.pilotId, body.simbriefId);
+      onSave(apiKey.trim(), json.data?.simbriefId || simbriefId || '');
       setTimeout(() => onClose(), 800);
     } catch (e: any) {
       setErrMsg(e?.message || 'Failed to save. Please try again.');
@@ -226,7 +139,7 @@ const SettingsModal: React.FC<Props> = ({
           PILOT PROFILE SETTINGS
         </h2>
         <p className="text-gray-400 text-center mb-8 text-sm">
-          Link via <b>API Key</b>. Only <b>Hoppie</b> &amp; <b>SimBrief</b> are stored in the database.
+          Store your <b>API Key</b> (DB) + your <b>Hoppie</b> and <b>SimBrief</b>.
         </p>
 
         {errMsg && (
@@ -241,7 +154,7 @@ const SettingsModal: React.FC<Props> = ({
         )}
 
         <div ref={formRef} className="flex flex-col gap-6 relative z-10">
-          {/* API KEY (read-only; from localStorage) */}
+          {/* API KEY */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-300">API KEY</label>
             <div className="relative">
@@ -249,7 +162,9 @@ const SettingsModal: React.FC<Props> = ({
                 type={showKey ? 'text' : 'password'}
                 className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 text-white pr-24"
                 value={showKey ? apiKey : maskKey(apiKey)}
-                disabled
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Paste your API Key from crew.jalvirtual.com"
+                disabled={saving || loading}
                 aria-label="JAL API Key"
               />
               <button
@@ -260,12 +175,9 @@ const SettingsModal: React.FC<Props> = ({
                 {showKey ? 'Hide' : 'Show'}
               </button>
             </div>
-            <p className="text-xs text-gray-500">
-              API Key is read from your device (localStorage). To change it, sign out then sign in on the landing screen.
-            </p>
           </div>
 
-          {/* Hoppie (Mongo) */}
+          {/* Hoppie */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-300">HOPPIE LOGON CODE</label>
             <input
@@ -278,7 +190,7 @@ const SettingsModal: React.FC<Props> = ({
             />
           </div>
 
-          {/* SimBrief (Mongo) */}
+          {/* SimBrief */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-300">SIMBRIEF PILOT ID</label>
             <input
@@ -294,9 +206,9 @@ const SettingsModal: React.FC<Props> = ({
           <div className="flex gap-4 mt-6">
             <button
               onClick={handleSave}
-              disabled={saving || loading || !apiKey || !pilotId}
+              disabled={saving || loading || !apiKey.trim()}
               className={`flex-1 py-3.5 rounded-lg font-semibold shadow-lg transition-all ${
-                saving || loading || !apiKey || !pilotId
+                saving || loading || !apiKey.trim()
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-[#b60c18] to-[#ea4256] text-white hover:from-[#c21c28] hover:to-[#ea5266]'
               }`}
