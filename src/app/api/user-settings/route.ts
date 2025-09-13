@@ -1,93 +1,61 @@
 // src/app/api/user-settings/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { dbConnect } from "../../../lib/db";
-import { UserSettings, type IUserSettings } from "../../../models/UserSettings";
+import { NextResponse } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { UserSettings } from "@/models/UserSettings";
 
-export const runtime = "nodejs"; // mongoose ใช้ edge ไม่ได้
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-function normPilotId(v?: string | null): string | null {
-  if (!v) return null;
-  let s = v.trim().toUpperCase();
-  if (!s) return null;
-  if (!s.startsWith("JAL")) s = `JAL${s.replace(/[^0-9A-Z]/g, "")}`;
-  return s;
-}
-
-// สร้างชนิดของเอกสารหลัง lean()
-type UserSettingsLean = IUserSettings & { _id?: unknown; __v?: number };
-
-// GET /api/user-settings?pilotId=JAL1234
-export async function GET(req: NextRequest) {
+// GET /api/user-settings?apiKey=XXXX
+export async function GET(req: Request) {
   try {
-    const pilotId = normPilotId(req.nextUrl.searchParams.get("pilotId"));
-    if (!pilotId) {
-      return NextResponse.json({ error: "Missing pilotId" }, { status: 400 });
+    const { searchParams } = new URL(req.url);
+    const apiKey = (searchParams.get("apiKey") || "").trim();
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing apiKey" }, { status: 400 });
     }
 
     await dbConnect();
-
-    // 👉 ใส่ generic ให้ lean<...>() จะได้รู้จัก field เช่น pilotId/hoppieId/simbriefId
-    const doc = await UserSettings.findOne({ pilotId })
-      .lean<UserSettingsLean>()
-      .exec();
+    const doc = await UserSettings.findOne({ apiKey }).lean();
 
     if (!doc) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     return NextResponse.json(
-      {
-        data: {
-          pilotId: doc.pilotId,
-          hoppieId: doc.hoppieId ?? "",
-          simbriefId: doc.simbriefId ?? "",
-        },
-      },
-      { status: 200 }
+      { data: { apiKey: doc.apiKey, hoppieId: doc.hoppieId || "", simbriefId: doc.simbriefId || "" } },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
   }
 }
 
-// POST /api/user-settings  body: { pilotId, hoppieId, simbriefId }
-export async function POST(req: NextRequest) {
+// POST /api/user-settings  { apiKey, hoppieId?, simbriefId? }
+export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as Partial<IUserSettings>;
-    const pilotId = normPilotId(body?.pilotId ?? null);
-    if (!pilotId) {
-      return NextResponse.json({ error: "Invalid pilotId" }, { status: 400 });
+    const body = await req.json();
+    const apiKey = String(body?.apiKey || "").trim();
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing apiKey" }, { status: 400 });
     }
 
-    const update: Pick<IUserSettings, "hoppieId" | "simbriefId"> = {
+    const update = {
       hoppieId: String(body?.hoppieId || "").trim(),
       simbriefId: String(body?.simbriefId || "").trim(),
     };
 
     await dbConnect();
-
     const doc = await UserSettings.findOneAndUpdate(
-      { pilotId },
-      { $set: update, $setOnInsert: { pilotId } },
+      { apiKey },
+      { $set: update, $setOnInsert: { apiKey } },
       { new: true, upsert: true }
-    )
-      .lean<UserSettingsLean>()
-      .exec();
-
-    // ปกติ doc จะมี เพราะ upsert:new:true
-    if (!doc) {
-      return NextResponse.json({ error: "Upsert failed" }, { status: 500 });
-    }
+    ).lean();
 
     return NextResponse.json(
-      {
-        data: {
-          pilotId: doc.pilotId,
-          hoppieId: doc.hoppieId ?? "",
-          simbriefId: doc.simbriefId ?? "",
-        },
-      },
-      { status: 200 }
+      { data: { apiKey: doc.apiKey, hoppieId: doc.hoppieId || "", simbriefId: doc.simbriefId || "" } },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
     );
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
