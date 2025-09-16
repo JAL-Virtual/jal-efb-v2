@@ -24,7 +24,6 @@ export interface Translations {
     loadsheet: string;
     flightTools: string;
     clockZulu: string;
-    notam: string;
   };
   
   // Wind Calculator
@@ -99,11 +98,6 @@ export interface Translations {
     close: string;
   };
 
-  // NOTAM Modal
-  notam: {
-    title: string;
-    close: string;
-  };
 
   // OPT Modal
   opt: {
@@ -148,7 +142,6 @@ const translations: Record<Language, Translations> = {
       loadsheet: 'Loadsheet',
       flightTools: 'Flight Tools',
       clockZulu: 'Clock / Zulu',
-      notam: 'NOTAM',
     },
     windCalculator: {
       title: 'Wind Component Calculator',
@@ -206,10 +199,6 @@ const translations: Record<Language, Translations> = {
       title: 'Loadsheet',
       close: 'Close',
     },
-    notam: {
-      title: 'NOTAM',
-      close: 'Close',
-    },
     opt: {
       title: 'OPT',
       close: 'Close',
@@ -247,7 +236,6 @@ const translations: Record<Language, Translations> = {
       loadsheet: 'แผ่นโหลด',
       flightTools: 'เครื่องมือการบิน',
       clockZulu: 'นาฬิกา / Zulu',
-      notam: 'NOTAM',
     },
     windCalculator: {
       title: 'เครื่องคำนวณองค์ประกอบลม',
@@ -305,10 +293,6 @@ const translations: Record<Language, Translations> = {
       title: 'แผ่นโหลด',
       close: 'ปิด',
     },
-    notam: {
-      title: 'NOTAM',
-      close: 'ปิด',
-    },
     opt: {
       title: 'OPT',
       close: 'ปิด',
@@ -346,7 +330,6 @@ const translations: Record<Language, Translations> = {
       loadsheet: '载重单',
       flightTools: '飞行工具',
       clockZulu: '时钟 / Zulu',
-      notam: 'NOTAM',
     },
     windCalculator: {
       title: '风力分量计算器',
@@ -404,10 +387,6 @@ const translations: Record<Language, Translations> = {
       title: '载重单',
       close: '关闭',
     },
-    notam: {
-      title: 'NOTAM',
-      close: '关闭',
-    },
     opt: {
       title: 'OPT',
       close: '关闭',
@@ -445,7 +424,6 @@ const translations: Record<Language, Translations> = {
       loadsheet: 'ロードシート',
       flightTools: 'フライトツール',
       clockZulu: '時計 / Zulu',
-      notam: 'NOTAM',
     },
     windCalculator: {
       title: '風成分計算機',
@@ -503,10 +481,6 @@ const translations: Record<Language, Translations> = {
       title: 'ロードシート',
       close: '閉じる',
     },
-    notam: {
-      title: 'NOTAM',
-      close: '閉じる',
-    },
     opt: {
       title: 'OPT',
       close: '閉じる',
@@ -544,7 +518,6 @@ const translations: Record<Language, Translations> = {
       loadsheet: '로드시트',
       flightTools: '비행 도구',
       clockZulu: '시계 / Zulu',
-      notam: 'NOTAM',
     },
     windCalculator: {
       title: '바람 성분 계산기',
@@ -600,10 +573,6 @@ const translations: Record<Language, Translations> = {
     },
     loadsheet: {
       title: '로드시트',
-      close: '닫기',
-    },
-    notam: {
-      title: 'NOTAM',
       close: '닫기',
     },
     opt: {

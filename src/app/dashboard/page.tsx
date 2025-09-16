@@ -31,7 +31,6 @@ const OPTModal = dynamic(() => import("../components/OPT").then(m => m.default),
 const FlighttoolModal = dynamic(() => import("../components/FlightToolsModal").then(m => m.default), { ssr: false });
 const MapComponent = dynamic(() => import("../map/MapComponent").then(m => m.default), { ssr: false });
 const ClockModal = dynamic(() => import("../components/ClockModal").then(m => m.default), { ssr: false });
-const NotamModal = dynamic(() => import("../components/NotamsModal").then(m => m.default), { ssr: false });
 const WindCalculatorModal = dynamic(() => import("../components/WindCalculatorModal").then(m => m.default), { ssr: false });
 
 /* -------------------------------------------------------------------------- */
@@ -125,7 +124,6 @@ const getButtons = (t: any) => [
   { id: "loadsheet", label: t.buttons.loadsheet, icon: "loadsheet", modal: "loadsheet" as const },
   { id: "flighttools", label: t.buttons.flightTools, icon: "flighttools", modal: "flighttool" as const },
   { id: "clock", label: t.buttons.clockZulu, icon: "clock", modal: "clock" as const },
-  { id: "notam", label: t.buttons.notam, icon: "notam", modal: "notam" as const },
   { id: "windcalc", label: t.buttons.windCalc, icon: "wind", modal: "windcalc" as const },
 ] as const;
 
@@ -151,7 +149,6 @@ type ModalKey =
   | "flighttool"
   | "map"
   | "clock"
-  | "notam"
   | "windcalc"
   | null;
 
@@ -792,7 +789,6 @@ export default function Dashboard() {
                   </div>
                 )}
                 {activeModal === "clock" && <ClockModal show onClose={() => setActiveModal(null)} />}
-                {activeModal === "notam" && <NotamModal show onClose={() => setActiveModal(null)} origin={flight.dpt} destination={flight.arr} />}
                 {activeModal === "windcalc" && (
                   <WindCalculatorModal
                     show
