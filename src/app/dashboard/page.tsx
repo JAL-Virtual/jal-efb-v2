@@ -9,7 +9,6 @@ import { Icon } from "@iconify/react";
 import { motion, AnimatePresence, Transition } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import { useLanguage } from "../../lib/LanguageContext";
-import LanguageSelector from "../components/LanguageSelector";
 
 /**
  * Dashboard (v2.4 • no pilotId; local-state + SettingsModal storage)
@@ -612,7 +611,6 @@ export default function Dashboard() {
               <span className="mx-2">•••</span>
               <Icon icon="mdi:wifi" />
               <Icon icon="mdi:battery" />
-              <LanguageSelector />
               <div className={`hidden sm:flex items-center gap-2 px-2 py-1 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`}>
                 <span className="hidden md:inline">{`${t.dashboard.welcomeBack}, ${userDisplay}`}</span>
                 <button onClick={handleLogout} disabled={authBusy} className={`text-[11px] px-2 py-0.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}>{t.dashboard.logout}</button>

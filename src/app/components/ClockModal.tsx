@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Icon } from '@iconify/react';
+import { useLanguage } from '../../lib/LanguageContext';
 
 const CONTINENTS = [
   {
@@ -140,6 +141,7 @@ const getCurrentUTCOffset = (timezone: string) => {
 };
 
 export default function WorldClockModal({ show, onClose }: { show: boolean; onClose: () => void }) {
+  const { t } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedContinent, setSelectedContinent] = useState(CONTINENTS[0]);
 
@@ -166,7 +168,7 @@ export default function WorldClockModal({ show, onClose }: { show: boolean; onCl
         <div className="sticky top-0 z-10 bg-gray-800 px-6 py-4 border-b border-gray-700 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Icon icon="mdi:clock-outline" className="text-xl text-blue-400" />
-            <h2 className="text-xl font-semibold text-white">World Clocks</h2>
+            <h2 className="text-xl font-semibold text-white">{t.clock.title}</h2>
           </div>
           <button 
             onClick={onClose}

@@ -47,6 +47,75 @@ export interface Translations {
     tailwindPresent: string;
     close: string;
   };
+
+  // Settings Modal
+  settings: {
+    title: string;
+    language: string;
+    theme: string;
+    lightTheme: string;
+    darkTheme: string;
+    apiKey: string;
+    apiKeyPlaceholder: string;
+    save: string;
+    cancel: string;
+  };
+
+  // ASR Modal
+  asr: {
+    title: string;
+    close: string;
+  };
+
+  // Clock Modal
+  clock: {
+    title: string;
+    utc: string;
+    local: string;
+    close: string;
+  };
+
+  // Delay Code Modal
+  delayCode: {
+    title: string;
+    close: string;
+  };
+
+  // Flight Tools Modal
+  flightTools: {
+    title: string;
+    close: string;
+  };
+
+  // iFuel Modal
+  ifuel: {
+    title: string;
+    close: string;
+  };
+
+  // Loadsheet Modal
+  loadsheet: {
+    title: string;
+    close: string;
+  };
+
+  // NOTAM Modal
+  notam: {
+    title: string;
+    close: string;
+  };
+
+  // OPT Modal
+  opt: {
+    title: string;
+    close: string;
+  };
+
+  // Weather Modal
+  weather: {
+    title: string;
+    close: string;
+  };
   
   // Common
   common: {
@@ -100,6 +169,55 @@ const translations: Record<Language, Translations> = {
       tailwindPresent: 'Tailwind Present',
       close: 'Close',
     },
+    settings: {
+      title: 'Settings',
+      language: 'Language',
+      theme: 'Theme',
+      lightTheme: 'Light',
+      darkTheme: 'Dark',
+      apiKey: 'API Key',
+      apiKeyPlaceholder: 'Enter your API key',
+      save: 'Save',
+      cancel: 'Cancel',
+    },
+    asr: {
+      title: 'ASR',
+      close: 'Close',
+    },
+    clock: {
+      title: 'Clock / Zulu',
+      utc: 'UTC',
+      local: 'Local',
+      close: 'Close',
+    },
+    delayCode: {
+      title: 'Delay Codes',
+      close: 'Close',
+    },
+    flightTools: {
+      title: 'Flight Tools',
+      close: 'Close',
+    },
+    ifuel: {
+      title: 'iFuel',
+      close: 'Close',
+    },
+    loadsheet: {
+      title: 'Loadsheet',
+      close: 'Close',
+    },
+    notam: {
+      title: 'NOTAM',
+      close: 'Close',
+    },
+    opt: {
+      title: 'OPT',
+      close: 'Close',
+    },
+    weather: {
+      title: 'Weather',
+      close: 'Close',
+    },
     common: {
       close: 'Close',
       loading: 'Loading...',
@@ -148,6 +266,55 @@ const translations: Record<Language, Translations> = {
       crosswindExceeded: 'เกินขีดจำกัดลมขวาง!',
       approachingLimit: 'ใกล้ขีดจำกัดลมขวาง',
       tailwindPresent: 'มีลมหลัง',
+      close: 'ปิด',
+    },
+    settings: {
+      title: 'การตั้งค่า',
+      language: 'ภาษา',
+      theme: 'ธีม',
+      lightTheme: 'สว่าง',
+      darkTheme: 'มืด',
+      apiKey: 'คีย์ API',
+      apiKeyPlaceholder: 'ใส่คีย์ API ของคุณ',
+      save: 'บันทึก',
+      cancel: 'ยกเลิก',
+    },
+    asr: {
+      title: 'ASR',
+      close: 'ปิด',
+    },
+    clock: {
+      title: 'นาฬิกา / Zulu',
+      utc: 'UTC',
+      local: 'ท้องถิ่น',
+      close: 'ปิด',
+    },
+    delayCode: {
+      title: 'รหัสความล่าช้า',
+      close: 'ปิด',
+    },
+    flightTools: {
+      title: 'เครื่องมือการบิน',
+      close: 'ปิด',
+    },
+    ifuel: {
+      title: 'iFuel',
+      close: 'ปิด',
+    },
+    loadsheet: {
+      title: 'แผ่นโหลด',
+      close: 'ปิด',
+    },
+    notam: {
+      title: 'NOTAM',
+      close: 'ปิด',
+    },
+    opt: {
+      title: 'OPT',
+      close: 'ปิด',
+    },
+    weather: {
+      title: 'สภาพอากาศ',
       close: 'ปิด',
     },
     common: {
@@ -200,6 +367,55 @@ const translations: Record<Language, Translations> = {
       tailwindPresent: '存在顺风',
       close: '关闭',
     },
+    settings: {
+      title: '设置',
+      language: '语言',
+      theme: '主题',
+      lightTheme: '浅色',
+      darkTheme: '深色',
+      apiKey: 'API密钥',
+      apiKeyPlaceholder: '输入您的API密钥',
+      save: '保存',
+      cancel: '取消',
+    },
+    asr: {
+      title: 'ASR',
+      close: '关闭',
+    },
+    clock: {
+      title: '时钟 / Zulu',
+      utc: 'UTC',
+      local: '本地',
+      close: '关闭',
+    },
+    delayCode: {
+      title: '延误代码',
+      close: '关闭',
+    },
+    flightTools: {
+      title: '飞行工具',
+      close: '关闭',
+    },
+    ifuel: {
+      title: 'iFuel',
+      close: '关闭',
+    },
+    loadsheet: {
+      title: '载重单',
+      close: '关闭',
+    },
+    notam: {
+      title: 'NOTAM',
+      close: '关闭',
+    },
+    opt: {
+      title: 'OPT',
+      close: '关闭',
+    },
+    weather: {
+      title: '天气',
+      close: '关闭',
+    },
     common: {
       close: '关闭',
       loading: '加载中...',
@@ -250,6 +466,55 @@ const translations: Record<Language, Translations> = {
       tailwindPresent: '追い風があります',
       close: '閉じる',
     },
+    settings: {
+      title: '設定',
+      language: '言語',
+      theme: 'テーマ',
+      lightTheme: 'ライト',
+      darkTheme: 'ダーク',
+      apiKey: 'APIキー',
+      apiKeyPlaceholder: 'APIキーを入力',
+      save: '保存',
+      cancel: 'キャンセル',
+    },
+    asr: {
+      title: 'ASR',
+      close: '閉じる',
+    },
+    clock: {
+      title: '時計 / Zulu',
+      utc: 'UTC',
+      local: 'ローカル',
+      close: '閉じる',
+    },
+    delayCode: {
+      title: '遅延コード',
+      close: '閉じる',
+    },
+    flightTools: {
+      title: 'フライトツール',
+      close: '閉じる',
+    },
+    ifuel: {
+      title: 'iFuel',
+      close: '閉じる',
+    },
+    loadsheet: {
+      title: 'ロードシート',
+      close: '閉じる',
+    },
+    notam: {
+      title: 'NOTAM',
+      close: '閉じる',
+    },
+    opt: {
+      title: 'OPT',
+      close: '閉じる',
+    },
+    weather: {
+      title: '天気',
+      close: '閉じる',
+    },
     common: {
       close: '閉じる',
       loading: '読み込み中...',
@@ -298,6 +563,55 @@ const translations: Record<Language, Translations> = {
       crosswindExceeded: '횡풍 제한 초과!',
       approachingLimit: '횡풍 제한에 근접',
       tailwindPresent: '후면풍 존재',
+      close: '닫기',
+    },
+    settings: {
+      title: '설정',
+      language: '언어',
+      theme: '테마',
+      lightTheme: '라이트',
+      darkTheme: '다크',
+      apiKey: 'API 키',
+      apiKeyPlaceholder: 'API 키를 입력하세요',
+      save: '저장',
+      cancel: '취소',
+    },
+    asr: {
+      title: 'ASR',
+      close: '닫기',
+    },
+    clock: {
+      title: '시계 / Zulu',
+      utc: 'UTC',
+      local: '로컬',
+      close: '닫기',
+    },
+    delayCode: {
+      title: '지연 코드',
+      close: '닫기',
+    },
+    flightTools: {
+      title: '비행 도구',
+      close: '닫기',
+    },
+    ifuel: {
+      title: 'iFuel',
+      close: '닫기',
+    },
+    loadsheet: {
+      title: '로드시트',
+      close: '닫기',
+    },
+    notam: {
+      title: 'NOTAM',
+      close: '닫기',
+    },
+    opt: {
+      title: 'OPT',
+      close: '닫기',
+    },
+    weather: {
+      title: '날씨',
       close: '닫기',
     },
     common: {

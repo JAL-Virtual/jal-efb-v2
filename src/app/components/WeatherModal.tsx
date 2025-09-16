@@ -353,7 +353,7 @@ export default function WeatherModal({ show, onClose }: Props) {
         <div className="sticky top-0 z-10 bg-gray-800 px-6 py-4 border-b border-gray-700 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Icon icon="mdi:weather-partly-cloudy" width={24} className="text-blue-400" />
-            <h2 className="text-2xl font-semibold text-white">Weather Information</h2>
+            <h2 className="text-2xl font-semibold text-white">{t.weather.title}</h2>
           </div>
           {/* close button removed; wrapper handles closing */}
         </div>

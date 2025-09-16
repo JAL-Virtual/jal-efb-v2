@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import Modal from './Modal'
 import { Icon } from "@iconify/react"
+import { useLanguage } from '../../lib/LanguageContext'
 
 const AIRLINES = [
   { id: 'JAL', name: 'Japan Airlines' },
@@ -57,6 +58,7 @@ function formatTimeHHMM(val: string) {
 }
 
 export default function ASRModal({ show, onClose, webhookUrl = "YOUR_DISCORD_WEBHOOK_URL" }: Props) {
+  const { t } = useLanguage();
   const [fields, setFields] = useState<ASRFields>({
     airline: AIRLINES[0].id,
     jalId: '',

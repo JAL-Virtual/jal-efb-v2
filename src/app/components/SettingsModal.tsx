@@ -4,6 +4,8 @@
 import React, { useEffect, useState } from 'react';
 import Modal from './Modal';
 import AnimatedModalBg from './AnimatedModalBg';
+import { useLanguage } from '../../lib/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 type Props = {
   show: boolean;
@@ -36,6 +38,7 @@ const SettingsModal: React.FC<Props> = ({
   initialHoppieId,
   initialSimbriefId,
 }) => {
+  const { t } = useLanguage();
   const [apiKey, setApiKey] = useState(initialApiKey || '');
   const [showApiKey, setShowApiKey] = useState(false);
   const [hoppieId, setHoppieId] = useState(initialHoppieId || '');
@@ -119,7 +122,7 @@ const SettingsModal: React.FC<Props> = ({
         <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-sky-500/25 rounded-full blur-xl" />
 
         <h2 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-rose-400 via-fuchsia-400 to-sky-400 bg-clip-text text-transparent">
-          PILOT PROFILE SETTINGS
+          {t.settings.title.toUpperCase()}
         </h2>
         
         <p className="text-gray-300 text-center mb-8 text-sm">
@@ -148,16 +151,24 @@ const SettingsModal: React.FC<Props> = ({
         )}
 
         <div className="flex flex-col gap-6 relative z-10">
+          {/* Language Selector */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-200">{t.settings.language.toUpperCase()}</label>
+            <div className="flex justify-center">
+              <LanguageSelector />
+            </div>
+          </div>
+
           {/* API Key */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-200">API KEY</label>
+            <label className="block text-sm font-medium text-gray-200">{t.settings.apiKey.toUpperCase()}</label>
             <div className="relative">
               <input
                 type={showApiKey ? 'text' : 'password'}
                 className="w-full p-3 border border-white/15 rounded-lg bg-white/5 text-white pr-24 outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 placeholder:text-white/40"
                 value={showApiKey ? apiKey : maskKey(apiKey)}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your API Key"
+                placeholder={t.settings.apiKeyPlaceholder}
                 disabled={saving}
                 aria-label="API Key"
               />
@@ -210,14 +221,14 @@ const SettingsModal: React.FC<Props> = ({
                   : 'bg-gradient-to-r from-rose-600 via-fuchsia-500 to-sky-500 text-white hover:from-rose-500 hover:to-sky-400'
               }`}
             >
-              {saving ? 'SAVING…' : 'SAVE SETTINGS'}
+              {saving ? 'SAVING…' : t.settings.save.toUpperCase()}
             </button>
             <button
               onClick={onClose}
               disabled={saving}
               className="flex-1 py-3.5 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/15 border border-white/10"
             >
-              CANCEL
+              {t.settings.cancel.toUpperCase()}
             </button>
           </div>
 
