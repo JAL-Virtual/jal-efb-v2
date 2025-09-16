@@ -31,7 +31,7 @@ const FlighttoolModal = dynamic(() => import("../components/FlightToolsModal").t
 const MapComponent = dynamic(() => import("../map/MapComponent").then(m => m.default), { ssr: false });
 const ClockModal = dynamic(() => import("../components/ClockModal").then(m => m.default), { ssr: false });
 const NotamModal = dynamic(() => import("../components/NotamsModal").then(m => m.default), { ssr: false });
-const CrewCenterModal = dynamic(() => import("../components/CrewcenterModal").then(m => m.default), { ssr: false });
+const WindCalculatorModal = dynamic(() => import("../components/WindCalculatorModal").then(m => m.default), { ssr: false });
 
 /* -------------------------------------------------------------------------- */
 /* Images (local in /public) */
@@ -49,6 +49,7 @@ import icon_delay from "../../../public/app-icons/delay.png";
 import icon_loadsheet from "../../../public/app-icons/loadsheet.png";
 import icon_plane from "../../../public/app-icons/plane.png";
 import icon_home from "../../../public/app-icons/home.png";
+import icon_wind from "../../../public/app-icons/wind.png";
 
 /* -------------------------------------------------------------------------- */
 /* iPad Align SVG */
@@ -94,6 +95,7 @@ const ICONS: Record<string, StaticImageData | undefined> = {
   loadsheet: icon_loadsheet,
   plane: icon_plane,
   home: icon_home,
+  wind: icon_wind,
 };
 
 const iconifyFallback: Record<string, string> = {
@@ -123,7 +125,7 @@ const BUTTONS = [
   { id: "flighttools", label: "Flight Tools", icon: "flighttools", modal: "flighttool" as const },
   { id: "clock", label: "Clock / Zulu", icon: "clock", modal: "clock" as const },
   { id: "notam", label: "NOTAM", icon: "notam", modal: "notam" as const },
-  { id: "crewcenter", label: "Crew Center", icon: "crew", modal: "crewcenter" as const },
+  { id: "windcalc", label: "Wind Calc", icon: "wind", modal: "windcalc" as const },
 ] as const;
 
 export type LoadsheetFields = {
@@ -149,7 +151,7 @@ type ModalKey =
   | "map"
   | "clock"
   | "notam"
-  | "crewcenter"
+  | "windcalc"
   | null;
 
 // Isomorphic layout effect
@@ -325,6 +327,8 @@ export default function Dashboard() {
 
   const [activeModal, setActiveModal] = useState<ModalKey>(null);
   const [isHoveringHeader, setIsHoveringHeader] = useState(false);
+
+
 
   // Close popup with Esc key
   useEffect(() => {
@@ -664,6 +668,7 @@ export default function Dashboard() {
             ))}
           </div>
 
+
           {/* Loadsheet Summary (optional) */}
           {loadsheetData.costIndex && (
             <motion.section
@@ -786,7 +791,12 @@ export default function Dashboard() {
                 )}
                 {activeModal === "clock" && <ClockModal show onClose={() => setActiveModal(null)} />}
                 {activeModal === "notam" && <NotamModal show onClose={() => setActiveModal(null)} origin={flight.dpt} destination={flight.arr} />}
-                {activeModal === "crewcenter" && <CrewCenterModal show onClose={() => setActiveModal(null)} />}
+                {activeModal === "windcalc" && (
+                  <WindCalculatorModal
+                    show
+                    onClose={() => setActiveModal(null)}
+                  />
+                )}
               </div>
             </motion.div>
           </>
