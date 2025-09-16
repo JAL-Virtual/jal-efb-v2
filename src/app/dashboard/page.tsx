@@ -8,6 +8,8 @@ import { Poppins } from "next/font/google";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence, Transition } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
+import { useLanguage } from "../../lib/LanguageContext";
+import LanguageSelector from "../components/LanguageSelector";
 
 /**
  * Dashboard (v2.4 • no pilotId; local-state + SettingsModal storage)
@@ -112,20 +114,20 @@ const DAY_TEXT = "#222222";
 const NIGHT_TEXT = "#ffffff";
 
 /** Main button list */
-const BUTTONS = [
-  { id: "profile", label: "My Profiles", icon: "profile", href: "https://crew.jalvirtual.com/profile", external: true },
-  { id: "map", label: "Map", icon: "map", modal: "map" as const },
-  { id: "navigraph", label: "Navigraph", icon: "navigraph", href: "https://charts.navigraph.com/", external: true },
-  { id: "opt", label: "OPT", icon: "opt", modal: "opt" as const },
-  { id: "metar", label: "Metar", icon: "weather", modal: "metar" as const },
-  { id: "ifuel", label: "iFuel", icon: "fuel", modal: "fuel" as const },
-  { id: "asr", label: "ASR", icon: "asr", modal: "asr" as const },
-  { id: "delay", label: "Delay Codes", icon: "delay", modal: "delay" as const },
-  { id: "loadsheet", label: "Loadsheet", icon: "loadsheet", modal: "loadsheet" as const },
-  { id: "flighttools", label: "Flight Tools", icon: "flighttools", modal: "flighttool" as const },
-  { id: "clock", label: "Clock / Zulu", icon: "clock", modal: "clock" as const },
-  { id: "notam", label: "NOTAM", icon: "notam", modal: "notam" as const },
-  { id: "windcalc", label: "Wind Calc", icon: "wind", modal: "windcalc" as const },
+const getButtons = (t: any) => [
+  { id: "profile", label: t.buttons.myProfiles, icon: "profile", href: "https://crew.jalvirtual.com/profile", external: true },
+  { id: "map", label: t.buttons.map, icon: "map", modal: "map" as const },
+  { id: "navigraph", label: t.buttons.navigraph, icon: "navigraph", href: "https://charts.navigraph.com/", external: true },
+  { id: "opt", label: t.buttons.opt, icon: "opt", modal: "opt" as const },
+  { id: "metar", label: t.buttons.metar, icon: "weather", modal: "metar" as const },
+  { id: "ifuel", label: t.buttons.ifuel, icon: "fuel", modal: "fuel" as const },
+  { id: "asr", label: t.buttons.asr, icon: "asr", modal: "asr" as const },
+  { id: "delay", label: t.buttons.delayCodes, icon: "delay", modal: "delay" as const },
+  { id: "loadsheet", label: t.buttons.loadsheet, icon: "loadsheet", modal: "loadsheet" as const },
+  { id: "flighttools", label: t.buttons.flightTools, icon: "flighttools", modal: "flighttool" as const },
+  { id: "clock", label: t.buttons.clockZulu, icon: "clock", modal: "clock" as const },
+  { id: "notam", label: t.buttons.notam, icon: "notam", modal: "notam" as const },
+  { id: "windcalc", label: t.buttons.windCalc, icon: "wind", modal: "windcalc" as const },
 ] as const;
 
 export type LoadsheetFields = {
@@ -198,6 +200,7 @@ function pickPilotId(payload: any): string | undefined {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   // --- Mount + theme -------------------------------------------------------
   const [mounted, setMounted] = useState(false);
@@ -515,7 +518,7 @@ export default function Dashboard() {
   // Unified button/tile
   const ButtonTile = useMemo(
     () =>
-      React.memo(function ButtonTileInner({ children, onClick, href, external, id }: { children: React.ReactNode; onClick?: () => void; href?: string; external?: boolean; id: string }) {
+      React.memo(function ButtonTileInner({ children, onClick, href, external, id, label }: { children: React.ReactNode; onClick?: () => void; href?: string; external?: boolean; id: string; label?: string }) {
         const base =
           "relative w-full flex flex-col items-center justify-center select-none";
         const iconWrap = isDark
@@ -528,7 +531,7 @@ export default function Dashboard() {
             <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl ${iconWrap} backdrop-blur shadow-[0_8px_20px_rgba(0,0,0,0.25)] ring-1 ring-white/20 flex items-center justify-center transition-colors`}>
               {children}
             </div>
-            <span className={`mt-2 text-[12px] sm:text-[13px] font-medium text-center ${labelColor}`}>{BUTTONS.find(b => b.id === id)?.label}</span>
+            <span className={`mt-2 text-[12px] sm:text-[13px] font-medium text-center ${labelColor}`}>{label}</span>
           </div>
         );
 
@@ -609,9 +612,10 @@ export default function Dashboard() {
               <span className="mx-2">•••</span>
               <Icon icon="mdi:wifi" />
               <Icon icon="mdi:battery" />
+              <LanguageSelector />
               <div className={`hidden sm:flex items-center gap-2 px-2 py-1 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`}>
-                <span className="hidden md:inline">{`Welcome back, ${userDisplay}`}</span>
-                <button onClick={handleLogout} disabled={authBusy} className={`text-[11px] px-2 py-0.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}>Logout</button>
+                <span className="hidden md:inline">{`${t.dashboard.welcomeBack}, ${userDisplay}`}</span>
+                <button onClick={handleLogout} disabled={authBusy} className={`text-[11px] px-2 py-0.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}>{t.dashboard.logout}</button>
               </div>
               <Link href="/dashboard" className={`inline-flex items-center justify-center h-7 w-7 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`} aria-label="Home">
                 <Icon icon="mdi:home-outline" className="text-base" />
@@ -624,7 +628,7 @@ export default function Dashboard() {
 
           {/* Button Grid */}
           <motion.div variants={gridAnim} initial="hidden" animate="show" className="grid w-full gap-4 sm:gap-5 [grid-template-columns:repeat(auto-fit,minmax(92px,1fr))]">
-            {BUTTONS.map((b) => {
+            {getButtons(t).map((b) => {
               const iconBg = isDark ? "" : "";
               const commonInner = (
                 <>
@@ -633,19 +637,19 @@ export default function Dashboard() {
               );
               if ("modal" in b && (b as any).modal) {
                 return (
-                  <ButtonTile key={b.id} id={b.id} onClick={() => setActiveModal((b as any).modal as ModalKey)}>
+                  <ButtonTile key={b.id} id={b.id} label={b.label} onClick={() => setActiveModal((b as any).modal as ModalKey)}>
                     {commonInner}
                   </ButtonTile>
                 );
               }
               if ((b as any).href) {
                 return (
-                  <ButtonTile key={b.id} id={b.id} href={(b as any).href} external={(b as any).external}>
+                  <ButtonTile key={b.id} id={b.id} label={b.label} href={(b as any).href} external={(b as any).external}>
                     {commonInner}
                   </ButtonTile>
                 );
               }
-              return <ButtonTile key={b.id} id={b.id}>{commonInner}</ButtonTile>;
+              return <ButtonTile key={b.id} id={b.id} label={b.label}>{commonInner}</ButtonTile>;
             })}
           </motion.div>
 
