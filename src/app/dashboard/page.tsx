@@ -28,6 +28,7 @@ const ASRModal = dynamic(() => import("../components/ASR").then(m => m.default),
 const DelayCodeModal = dynamic(() => import("../components/DelayCodeModal").then(m => m.default), { ssr: false });
 const OPTModal = dynamic(() => import("../components/OPT").then(m => m.default), { ssr: false });
 const FlighttoolModal = dynamic(() => import("../components/FlightToolsModal").then(m => m.default), { ssr: false });
+const MapComponent = dynamic(() => import("../map/MapComponent").then(m => m.default), { ssr: false });
 const ClockModal = dynamic(() => import("../components/ClockModal").then(m => m.default), { ssr: false });
 const NotamModal = dynamic(() => import("../components/NotamsModal").then(m => m.default), { ssr: false });
 const CrewCenterModal = dynamic(() => import("../components/CrewcenterModal").then(m => m.default), { ssr: false });
@@ -111,7 +112,7 @@ const NIGHT_TEXT = "#ffffff";
 /** Main button list */
 const BUTTONS = [
   { id: "profile", label: "My Profiles", icon: "profile", href: "https://crew.jalvirtual.com/profile", external: true },
-  { id: "map", label: "Map", icon: "map", href: "/map" },
+  { id: "map", label: "Map", icon: "map", modal: "map" as const },
   { id: "navigraph", label: "Navigraph", icon: "navigraph", href: "https://charts.navigraph.com/", external: true },
   { id: "opt", label: "OPT", icon: "opt", modal: "opt" as const },
   { id: "metar", label: "Metar", icon: "weather", modal: "metar" as const },
@@ -145,6 +146,7 @@ type ModalKey =
   | "delay"
   | "opt"
   | "flighttool"
+  | "map"
   | "clock"
   | "notam"
   | "crewcenter"
@@ -647,7 +649,6 @@ export default function Dashboard() {
           <div className="pointer-events-auto fixed left-1/2 -translate-x-1/2 bottom-6 w-[90%] max-w-[780px] rounded-3xl bg-white/70 dark:bg-gray-900/60 backdrop-blur border border-black/10 dark:border-white/10 shadow-xl px-3 py-2 flex items-center justify-center gap-3">
             {[
               { id: "home", icon: "mdi:home-outline", href: "/dashboard" },
-              { id: "map", icon: "mdi:map", href: "/map" },
               { id: "navigraph", icon: "mdi:chart-areaspline", href: "https://charts.navigraph.com/", external: true },
               { id: "settings", icon: "mdi:cog" },
             ].map((d) => (
@@ -778,6 +779,11 @@ export default function Dashboard() {
                   />
                 )}
                 {activeModal === "flighttool" && <FlighttoolModal show onClose={() => setActiveModal(null)} simbriefId={simbriefId} />}
+                {activeModal === "map" && (
+                  <div className="p-2">
+                    <MapComponent embedded onClose={() => setActiveModal(null)} />
+                  </div>
+                )}
                 {activeModal === "clock" && <ClockModal show onClose={() => setActiveModal(null)} />}
                 {activeModal === "notam" && <NotamModal show onClose={() => setActiveModal(null)} origin={flight.dpt} destination={flight.arr} />}
                 {activeModal === "crewcenter" && <CrewCenterModal show onClose={() => setActiveModal(null)} />}
