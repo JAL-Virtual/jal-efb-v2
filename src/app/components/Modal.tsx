@@ -1,6 +1,5 @@
 'use client';
 import React, { ReactNode } from "react";
-import { Icon } from "@iconify/react";
 
 export default function Modal({
   children,
@@ -16,16 +15,20 @@ export default function Modal({
       <div
         className={`
           relative bg-white/95 border-2 border-[#b60c18]/25 rounded-3xl shadow-2xl 
-          px-6 py-6 max-w-5xl w-full animate-fadein 
+          px-6 pt-12 pb-6 max-w-5xl w-full animate-fadein 
           max-h-screen overflow-y-auto 
           ${wide ? "max-w-52xl" : ""}
         `}
+        role="dialog"
+        aria-modal="true"
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-4 text-[#b60c18] hover:text-[#ea4256] text-2xl"
+          className="absolute top-3 right-4 z-20 px-3 py-1.5 rounded-full bg-[#b60c18] hover:bg-[#ea4256] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-rose-400/60"
+          aria-label="Close"
+          type="button"
         >
-          <Icon icon="mdi:close-circle" />
+          Close
         </button>
         {children}
       </div>

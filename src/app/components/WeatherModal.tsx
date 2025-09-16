@@ -355,9 +355,7 @@ export default function WeatherModal({ show, onClose }: Props) {
             <Icon icon="mdi:weather-partly-cloudy" width={24} className="text-blue-400" />
             <h2 className="text-2xl font-semibold text-white">Weather Information</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors">
-            <Icon icon="mdi:close" width={24} className="text-gray-400 hover:text-white" />
-          </button>
+          {/* close button removed; wrapper handles closing */}
         </div>
 
         <div className="flex h-[600px] overflow-hidden">

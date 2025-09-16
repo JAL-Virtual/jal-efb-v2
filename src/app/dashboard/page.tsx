@@ -324,6 +324,17 @@ export default function Dashboard() {
   const [activeModal, setActiveModal] = useState<ModalKey>(null);
   const [isHoveringHeader, setIsHoveringHeader] = useState(false);
 
+  // Close popup with Esc key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveModal(null);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }
+  }, []);
+
   // Animations (memo)
   const buttonTransition: Transition = useMemo(() => ({ delay: 0.03, type: "spring", stiffness: 300, damping: 15 }), []);
   const gridAnim = useMemo(() => ({ hidden: { opacity: 0, scale: 0.98, y: 24 }, show: { opacity: 1, scale: 1, y: 0, transition: { stiffness: 120, damping: 16 } } }), []);
@@ -500,24 +511,18 @@ export default function Dashboard() {
     () =>
       React.memo(function ButtonTileInner({ children, onClick, href, external, id }: { children: React.ReactNode; onClick?: () => void; href?: string; external?: boolean; id: string }) {
         const base =
-          "relative w-full aspect-square min-h-[96px] sm:min-h-[112px] md:min-h-[128px] lg:min-h-[144px] flex flex-col items-center justify-center font-medium rounded-3xl shadow-sm transition-all duration-300 hover:shadow-2xl border group overflow-hidden focus-within:ring-2 focus-within:ring-rose-400/50";
-        const style = isDark ? "bg-gray-900/60 border-white/10 text-white hover:border-rose-400/40" : "bg-white/70 border-black/5 text-gray-900 hover:border-rose-300/60 backdrop-blur";
-
-        const gradient = (
-          <>
-            <div className="pointer-events-none absolute inset-0 rounded-3xl [mask-image:linear-gradient(transparent,black,transparent)] opacity-60">
-              <div className="absolute -inset-[2px] rounded-3xl bg-[conic-gradient(var(--tw-gradient-stops))] from-rose-500 via-amber-400 to-rose-600 animate-[spin_10s_linear_infinite] motion-reduce:animate-none" />
-            </div>
-            <div className="pointer-events-none absolute -inset-6 rounded-[2.25rem] blur-2xl opacity-20 bg-gradient-to-br from-rose-500/30 via-amber-400/30 to-fuchsia-500/30" />
-          </>
-        );
+          "relative w-full flex flex-col items-center justify-center select-none";
+        const iconWrap = isDark
+          ? "bg-white/10 hover:bg-white/20"
+          : "bg-white/80 hover:bg-white";
+        const labelColor = isDark ? "text-white/90" : "text-gray-900";
 
         const body = (
-          <div className={`${base} ${style}`}>
-            {gradient}
-            <div className="relative z-10 w-[88%] h-[88%] rounded-2xl flex flex-col items-center justify-center bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+          <div className={`${base}`}>
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl ${iconWrap} backdrop-blur shadow-[0_8px_20px_rgba(0,0,0,0.25)] ring-1 ring-white/20 flex items-center justify-center transition-colors`}>
               {children}
             </div>
+            <span className={`mt-2 text-[12px] sm:text-[13px] font-medium text-center ${labelColor}`}>{BUTTONS.find(b => b.id === id)?.label}</span>
           </div>
         );
 
@@ -529,19 +534,20 @@ export default function Dashboard() {
 
         return (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            whileHover={{ y: -6 }}
+            whileHover={{ y: -4 }}
             whileTap={{ scale: 0.98 }}
             transition={buttonTransition}
             data-tile-id={id}
+            className="justify-self-center"
           >
             {href ? (
               <Link href={href} {...commonProps}>
                 {body}
               </Link>
             ) : (
-              <button type="button" onClick={onClick} className="block w-full focus:outline-none" aria-label="Open module">
+              <button type="button" onClick={onClick} className="focus:outline-none" aria-label="Open module">
                 {body}
               </button>
             )}
@@ -584,101 +590,39 @@ export default function Dashboard() {
         {mounted && <FloatingCranes />}
       </div>
 
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.02 }}
-        className={`relative z-10 flex items-center justify-between w-full max-w-screen-xl mx-auto px-4 sm:px-6 py-4 ${isDark ? "bg-gray-900/70 border-white/10 text-white" : "bg-white/80 border-black/10 text-gray-900"} backdrop-blur-md border-b rounded-b-xl shadow-sm`}
-        onMouseEnter={() => setIsHoveringHeader(true)}
-        onMouseLeave={() => setIsHoveringHeader(false)}
-      >
-        <div className="flex items-center gap-4 sm:gap-6">
-          <div className="relative">
-            <motion.div
-              className="absolute -inset-4 bg-gradient-to-r from-rose-600/20 to-amber-400/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              animate={{ rotate: isHoveringHeader ? 360 : 0 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            />
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight jal-title-shine relative z-10">
-              Japan Airline Virtuals
-            </h1>
-            <span className={`${isDark ? "text-rose-300" : "text-rose-600"} text-xs font-medium relative z-10`}>Electronic Flight Bag</span>
-          </div>
-          <motion.span
-            className={`inline-flex items-center px-3 py-1.5 rounded-full ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white border-black/10 text-gray-900"} border text-sm font-medium shadow-inner`}
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" aria-hidden /> UTC{" "}
-            <time suppressHydrationWarning>{utcTime}</time>
-          </motion.span>
-        </div>
-
-        {/* Right cluster: Theme + Welcome + Sign out */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme */}
-          <motion.button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDark ? "hover:bg-white/10 text-gray-200" : "hover:bg-black/5 text-gray-700"} transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60`}
-            aria-label="Toggle theme"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Icon icon={isDark ? "mdi:weather-sunny" : "mdi:weather-night"} className="text-xl" />
-          </motion.button>
-
-          {/* JAL user chip */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <motion.div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"} shadow-inner`}
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <span className="w-[22px] h-[22px] rounded-full bg-rose-500/70 ring-2 ring-white/20 inline-flex items-center justify-center text-[11px] text-white font-bold">
-                J
-              </span>
-              <span className="text-sm font-medium max-w-[12rem] truncate">
-                {`Welcome, ${userDisplay}`}
-              </span>
-            </motion.div>
-            <motion.button
-              onClick={handleLogout}
-              disabled={authBusy}
-              className={`text-sm px-3 py-1.5 rounded-full border transition ${isDark ? "bg-white/5 border-white/10 hover:bg-white/10" : "bg-white border-black/10 hover:bg-black/5"}`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Sign out
-            </motion.button>
-          </div>
-
-          {/* Settings shortcut */}
-          <motion.button
-            onClick={() => setActiveModal("settings")}
-            className="p-2 rounded-full bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-md hover:shadow-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
-            aria-label="Settings"
-            whileHover={{ scale: 1.1, rotate: 15 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Icon icon="mdi:cog" className="text-lg" />
-          </motion.button>
-        </div>
-      </motion.header>
-
       {/* Main */}
-      <main className="relative z-10 w-full px-4 sm:px-6 pt-8 pb-28">
-        <div className="w-full max-w-screen-xl mx-auto">
+      <main className="relative z-10 w-full px-0 sm:px-0 pt-4 pb-28">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
+          {/* Homescreen header */}
+          <div className="flex items-center justify-between mb-6 text-white/90">
+            <div className="text-xs sm:text-sm opacity-90">
+              <span>UTC </span>
+              <time suppressHydrationWarning>{utcTime}</time>
+            </div>
+            <div className="flex items-center gap-2 text-xs opacity-80">
+              <span className="mx-2">•••</span>
+              <Icon icon="mdi:wifi" />
+              <Icon icon="mdi:battery" />
+              <div className={`hidden sm:flex items-center gap-2 px-2 py-1 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`}>
+                <span className="hidden md:inline">{`Welcome back, ${userDisplay}`}</span>
+                <button onClick={handleLogout} disabled={authBusy} className={`text-[11px] px-2 py-0.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}>Logout</button>
+              </div>
+              <Link href="/dashboard" className={`inline-flex items-center justify-center h-7 w-7 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`} aria-label="Home">
+                <Icon icon="mdi:home-outline" className="text-base" />
+              </Link>
+              <button onClick={() => setActiveModal("settings")} className={`inline-flex items-center justify-center h-7 w-7 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`} aria-label="Settings">
+                <Icon icon="mdi:cog" className="text-base" />
+              </button>
+            </div>
+          </div>
+
           {/* Button Grid */}
-          <motion.div variants={gridAnim} initial="hidden" animate="show" className="grid w-full gap-3 sm:gap-4 md:gap-5 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+          <motion.div variants={gridAnim} initial="hidden" animate="show" className="grid w-full gap-4 sm:gap-5 [grid-template-columns:repeat(auto-fit,minmax(92px,1fr))]">
             {BUTTONS.map((b) => {
-              const iconBg = isDark ? "bg-white/5 group-hover:bg-white/10" : "bg-black/5 group-hover:bg-black/10";
+              const iconBg = isDark ? "" : "";
               const commonInner = (
                 <>
-                  <div className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl ${iconBg} mb-2 transition-colors shadow-sm shrink-0 ring-1 ring-inset ring-white/10`}>
-                    <CustomIcon iconName={b.icon} className="w-7 h-7 sm:w-8 sm:h-8" />
-                  </div>
-                  <span className="text-sm font-semibold text-center tracking-wide">{b.label}</span>
+                  <CustomIcon iconName={b.icon} className="w-7 h-7 sm:w-8 sm:h-8" />
                 </>
               );
               if ("modal" in b && (b as any).modal) {
@@ -698,6 +642,26 @@ export default function Dashboard() {
               return <ButtonTile key={b.id} id={b.id}>{commonInner}</ButtonTile>;
             })}
           </motion.div>
+
+          {/* Bottom dock */}
+          <div className="pointer-events-auto fixed left-1/2 -translate-x-1/2 bottom-6 w-[90%] max-w-[780px] rounded-3xl bg-white/70 dark:bg-gray-900/60 backdrop-blur border border-black/10 dark:border-white/10 shadow-xl px-3 py-2 flex items-center justify-center gap-3">
+            {[
+              { id: "home", icon: "mdi:home-outline", href: "/dashboard" },
+              { id: "map", icon: "mdi:map", href: "/map" },
+              { id: "navigraph", icon: "mdi:chart-areaspline", href: "https://charts.navigraph.com/", external: true },
+              { id: "settings", icon: "mdi:cog" },
+            ].map((d) => (
+              d.href ? (
+                <Link key={d.id} href={d.href as string} target={d.external ? "_blank" : undefined} rel={d.external ? "noopener noreferrer" : undefined} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl hover:bg-black/5 dark:hover:bg-white/10">
+                  <Icon icon={d.icon} />
+                </Link>
+              ) : (
+                <button key={d.id} type="button" onClick={() => setActiveModal("settings")} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl hover:bg-black/5 dark:hover:bg-white/10">
+                  <Icon icon={d.icon} />
+                </button>
+              )
+            ))}
+          </div>
 
           {/* Loadsheet Summary (optional) */}
           {loadsheetData.costIndex && (
@@ -734,162 +698,92 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className={`fixed bottom-0 left-0 w-full py-3 ${isDark ? "bg-gray-900/70 border-white/10 text-white" : "bg-white/80 border-black/10 text-gray-900"} backdrop-blur-sm border-t text-center text-sm tracking-wide shadow-sm`}>
-        <div className="flex justify-center items-center space-x-4">
-          <span className="flex items-center">
-            <Icon icon="mdi:airplane" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-1`} /> Japan Airlines Virtual
-          </span>
-          <span aria-hidden>•</span>
-          <span>EFB Developed by Y. Zhong Jie</span>
-          <span aria-hidden>•</span>
-          <span className="flex items-center">
-            <Icon icon="mdi:flower" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-1`} /> v2.4.0
-          </span>
-        </div>
-      </footer>
-
-      {/* Backdrop for modals */}
+      {/* Popups */}
       <AnimatePresence>
         {activeModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black z-40 backdrop-blur-sm"
-            onClick={() => setActiveModal(null)}
-            aria-hidden
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Modals */}
-      <AnimatePresence>
-        {/* settings */}
-        {activeModal === "settings" && (
-          <motion.div key="settings" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <SettingsModal
-              show
-              onClose={() => setActiveModal(null)}
-              onSave={handleSaveSettings}
-              initialApiKey={apiKey}
-              initialHoppieId={hoppieId}
-              initialSimbriefId={simbriefId}
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.25 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black z-40"
+              onClick={() => setActiveModal(null)}
+              aria-hidden
             />
-          </motion.div>
-        )}
-
-        {/* fuel */}
-        {activeModal === "fuel" && (
-          <motion.div key="fuel" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <IFuelModal
-              show
-              onClose={() => setActiveModal(null)}
-              onConfirm={async () => {
-                toast.success("Fuel Request Sent!", {
-                  icon: "⛽",
-                  style: { background: isDark ? "#111827" : "#ffffff", color: isDark ? NIGHT_TEXT : DAY_TEXT, border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`, boxShadow: "0 4px 20px rgba(182, 12, 24, 0.15)" },
-                });
-                return "Fuel Request Sent!";
-              }}
-            />
-          </motion.div>
-        )}
-
-        {/* metar */}
-        {activeModal === "metar" && (
-          <motion.div key="metar" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <WeatherModal show onClose={() => setActiveModal(null)} />
-          </motion.div>
-        )}
-
-        {/* loadsheet */}
-        {activeModal === "loadsheet" && (
-          <motion.div key="loadsheet" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <LoadsheetModal
-              show
-              onClose={() => setActiveModal(null)}
-              onAutofill={async (id: string) => {
-                const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(id)}&json=v2`, { cache: "no-store" });
-                return res.json();
-              }}
-              hoppieId={hoppieId}
-              simbriefId={simbriefId}
-              onSubmit={async () => {
-                toast.success("Loadsheet Sent!", {
-                  icon: "📦",
-                  style: { background: isDark ? "#111827" : "#ffffff", color: isDark ? NIGHT_TEXT : DAY_TEXT, border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`, boxShadow: "0 4px 20px rgba(182, 12, 24, 0.15)" },
-                });
-                return "Loadsheet Sent!";
-              }}
-            />
-          </motion.div>
-        )}
-
-        {/* asr */}
-        {activeModal === "asr" && (
-          <motion.div key="asr" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <ASRModal show onClose={() => setActiveModal(null)} />
-          </motion.div>
-        )}
-
-        {/* delay */}
-        {activeModal === "delay" && (
-          <motion.div key="delay" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <DelayCodeModal show onClose={() => setActiveModal(null)} />
-          </motion.div>
-        )}
-
-        {/* opt */}
-        {activeModal === "opt" && (
-          <motion.div key="opt" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <OPTModal
-              show
-              onClose={() => setActiveModal(null)}
-              onAutofill={async (id: string) => {
-                const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(id)}&json=v2`, { cache: "no-store" });
-                return res.json();
-              }}
-              hoppieId={hoppieId}
-              simbriefId={simbriefId}
-              onSubmit={async () => {
-                toast.success("OPT Sent!", {
-                  icon: "📈",
-                  style: { background: isDark ? "#111827" : "#ffffff", color: isDark ? NIGHT_TEXT : DAY_TEXT, border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`, boxShadow: "0 4px 20px rgba(182, 12, 24, 0.15)" },
-                });
-                return "OPT Sent!";
-              }}
-            />
-          </motion.div>
-        )}
-
-        {/* flighttools */}
-        {activeModal === "flighttool" && (
-          <motion.div key="flighttool" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <FlighttoolModal show onClose={() => setActiveModal(null)} simbriefId={simbriefId} />
-          </motion.div>
-        )}
-
-        {/* clock */}
-        {activeModal === "clock" && (
-          <motion.div key="clock" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <ClockModal show onClose={() => setActiveModal(null)} />
-          </motion.div>
-        )}
-
-        {/* notam */}
-        {activeModal === "notam" && (
-          <motion.div key="notam" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <NotamModal show onClose={() => setActiveModal(null)} origin={flight.dpt} destination={flight.arr} />
-          </motion.div>
-        )}
-
-        {/* crew center */}
-        {activeModal === "crewcenter" && (
-          <motion.div key="crewcenter" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <CrewCenterModal show onClose={() => setActiveModal(null)} />
-          </motion.div>
+            <motion.div key="popup" variants={modalAnim} initial="hidden" animate="show" exit="exit" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className={`${isDark ? "bg-gray-900/90 text-white border-white/10" : "bg-white/95 text-gray-900 border-black/10"} rounded-2xl border shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-auto relative`} onClick={(e) => e.stopPropagation()}>
+                {activeModal === "settings" && (
+                  <SettingsModal
+                    show
+                    onClose={() => setActiveModal(null)}
+                    onSave={handleSaveSettings}
+                    initialApiKey={apiKey}
+                    initialHoppieId={hoppieId}
+                    initialSimbriefId={simbriefId}
+                  />
+                )}
+                {activeModal === "fuel" && (
+                  <IFuelModal
+                    show
+                    onClose={() => setActiveModal(null)}
+                    onConfirm={async () => {
+                      toast.success("Fuel Request Sent!", {
+                        icon: "⛽",
+                        style: { background: isDark ? "#111827" : "#ffffff", color: isDark ? NIGHT_TEXT : DAY_TEXT, border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`, boxShadow: "0 4px 20px rgba(182, 12, 24, 0.15)" },
+                      });
+                      return "Fuel Request Sent!";
+                    }}
+                  />
+                )}
+                {activeModal === "metar" && <WeatherModal show onClose={() => setActiveModal(null)} />}
+                {activeModal === "loadsheet" && (
+                  <LoadsheetModal
+                    show
+                    onClose={() => setActiveModal(null)}
+                    onAutofill={async (id: string) => {
+                      const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(id)}&json=v2`, { cache: "no-store" });
+                      return res.json();
+                    }}
+                    hoppieId={hoppieId}
+                    simbriefId={simbriefId}
+                    onSubmit={async () => {
+                      toast.success("Loadsheet Sent!", {
+                        icon: "📦",
+                        style: { background: isDark ? "#111827" : "#ffffff", color: isDark ? NIGHT_TEXT : DAY_TEXT, border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`, boxShadow: "0 4px 20px rgba(182, 12, 24, 0.15)" },
+                      });
+                      return "Loadsheet Sent!";
+                    }}
+                  />
+                )}
+                {activeModal === "asr" && <ASRModal show onClose={() => setActiveModal(null)} />}
+                {activeModal === "delay" && <DelayCodeModal show onClose={() => setActiveModal(null)} />}
+                {activeModal === "opt" && (
+                  <OPTModal
+                    show
+                    onClose={() => setActiveModal(null)}
+                    onAutofill={async (id: string) => {
+                      const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(id)}&json=v2`, { cache: "no-store" });
+                      return res.json();
+                    }}
+                    hoppieId={hoppieId}
+                    simbriefId={simbriefId}
+                    onSubmit={async () => {
+                      toast.success("OPT Sent!", {
+                        icon: "📈",
+                        style: { background: isDark ? "#111827" : "#ffffff", color: isDark ? NIGHT_TEXT : DAY_TEXT, border: `1px solid ${isDark ? "#1f2937" : "#e5e7eb"}`, boxShadow: "0 4px 20px rgba(182, 12, 24, 0.15)" },
+                      });
+                      return "OPT Sent!";
+                    }}
+                  />
+                )}
+                {activeModal === "flighttool" && <FlighttoolModal show onClose={() => setActiveModal(null)} simbriefId={simbriefId} />}
+                {activeModal === "clock" && <ClockModal show onClose={() => setActiveModal(null)} />}
+                {activeModal === "notam" && <NotamModal show onClose={() => setActiveModal(null)} origin={flight.dpt} destination={flight.arr} />}
+                {activeModal === "crewcenter" && <CrewCenterModal show onClose={() => setActiveModal(null)} />}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

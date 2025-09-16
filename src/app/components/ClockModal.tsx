@@ -172,7 +172,7 @@ export default function WorldClockModal({ show, onClose }: { show: boolean; onCl
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
           >
-            <Icon icon="mdi:close" width={24} />
+            {/* close button removed; wrapper handles closing */}
           </button>
         </div>
         

@@ -220,9 +220,7 @@ export default function ASRModal({ show, onClose, webhookUrl = "YOUR_DISCORD_WEB
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors">
-            <Icon icon="mdi:close" width={24} className="text-gray-400 hover:text-white" />
-          </button>
+          {/* close button removed; wrapper handles closing */}
         </div>
 
         <div className="flex h-[600px] overflow-hidden">
