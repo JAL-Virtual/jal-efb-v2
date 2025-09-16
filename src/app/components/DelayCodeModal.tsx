@@ -107,7 +107,7 @@ const DELAY_CODES = [
   { code: "99", reason: "UNSPECIFIED DELAY - INVESTIGATION NEEDED" }
 ]
 
-// Japan Airlines Group + key subsidiaries
+// Japan Airlines Group + subsidiaries only
 const AIRLINES = [
   { id: 'JAL', name: 'Japan Airlines' },
   { id: 'JAR', name: 'J-AIR' },
@@ -122,28 +122,7 @@ type Props = {
   webhookUrl?: string;
 }
 
-/** Fetch current pilot profile from your backend/crew API and normalize the ID */
-async function fetchCurrentPilot(): Promise<{ pilotIdNum?: string } | null> {
-  try {
-    // Replace with your real endpoint if different:
-    const res = await fetch('https://crew.jalvirtual.com/api/profile', { cache: 'no-store', credentials: 'include' as RequestCredentials })
-    if (!res.ok) return null
-    const data = await res.json()
-
-    // Accept a few common shapes: "JAL01234", "01234", numeric, etc.
-    const raw: string | number | undefined =
-      data?.pilotId ?? data?.hoppieId ?? data?.id ?? data?.callsign
-
-    if (raw == null) return { pilotIdNum: undefined }
-
-    const str = String(raw)
-    // Extract numeric block (strip any airline prefix letters)
-    const num = (str.match(/(\d+)/)?.[1] ?? '').padStart(4, '0')
-    return { pilotIdNum: num || undefined }
-  } catch {
-    return null
-  }
-}
+// Removed auto-detection function - pilot ID must be manually entered
 
 const DelayCodeModal = ({
   show,
@@ -151,31 +130,19 @@ const DelayCodeModal = ({
   webhookUrl = "https://discord.com/api/webhooks/1390281109862092913/fYdJLjqYavUblunHHeGFgtx3vShJN44nh8BJMVf_2egEV6vmdxCPY94lr_L_Xa0rf0xJ"
 }: Props) => {
   const [pilotIdNum, setPilotIdNum] = useState("") // numeric part only (e.g., "01234")
-  const [selectedAirline, setSelectedAirline] = useState(AIRLINES[0].id)
+  const [selectedAirline, setSelectedAirline] = useState("") // No default airline
   const [selectedCode, setSelectedCode] = useState(DELAY_CODES[0].code)
   const [isSending, setIsSending] = useState(false)
-  const [loadingPilot, setLoadingPilot] = useState(false)
   const [feedback, setFeedback] = useState<{message: string, type: 'success'|'error'}|null>(null)
 
   // Reset on open
   useEffect(() => {
     if (show) {
-      setSelectedAirline(AIRLINES[0].id)
+      setSelectedAirline("") // No default airline selection
+      setPilotIdNum("") // Clear pilot ID
       setSelectedCode(DELAY_CODES[0].code)
       setFeedback(null)
       setIsSending(false)
-      // Load Pilot ID from DB
-      let cancelled = false
-      const run = async () => {
-        setLoadingPilot(true)
-        const fetched = await fetchCurrentPilot()
-        if (!cancelled) {
-          setPilotIdNum(fetched?.pilotIdNum ?? "")
-          setLoadingPilot(false)
-        }
-      }
-      run()
-      return () => { cancelled = true }
     }
   }, [show])
 
@@ -187,12 +154,22 @@ const DelayCodeModal = ({
   }, [feedback])
 
   const handleSend = async () => {
+    // Validation
+    if (!selectedAirline.trim()) {
+      setFeedback({message: "Please select an airline", type: 'error'})
+      return
+    }
+    if (!pilotIdNum.trim()) {
+      setFeedback({message: "Please enter your pilot ID", type: 'error'})
+      return
+    }
+
     setIsSending(true)
     setFeedback(null)
 
-    const selected = DELAY_CODES.find(d => d.code === selectedCode)
-    // Build full ID as <AIRLINE><NUM>, e.g., "JAL01234"
-    const fullPilotId = `${selectedAirline}${pilotIdNum}`
+     const selected = DELAY_CODES.find(d => d.code === selectedCode)
+     // Build full ID as JAL<NUM>, e.g., "JAL01234"
+     const fullPilotId = `JAL${pilotIdNum}`
 
     const airlineName = AIRLINES.find(a => a.id === selectedAirline)?.name ?? selectedAirline
 
@@ -231,80 +208,113 @@ const DelayCodeModal = ({
 
   return (
     <Modal onClose={onClose} wide>
-      <div className="relative w-full max-w-6xl bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-700">
-        <div className="sticky top-0 z-10 bg-gray-800 px-6 py-4 border-b border-gray-700 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <Icon icon="mdi:clock-alert" width={24} className="text-yellow-400" />
-            <h2 className="text-2xl font-semibold text-white">Delay Code Report</h2>
+      <div className="relative w-full max-w-7xl bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-600/50 backdrop-blur-xl">
+        {/* Enhanced Header */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-800/95 to-slate-800/95 backdrop-blur-sm px-8 py-6 border-b border-gray-600/50 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl shadow-lg">
+              <Icon icon="mdi:clock-alert" width={28} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-white">
+                ⚠️ Delay Code Report
+              </h2>
+              <p className="text-sm text-white mt-1">Report flight delays and issues</p>
+            </div>
           </div>
-          {/* close button removed; wrapper handles closing */}
+          {/* Enhanced decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full blur-2xl"></div>
         </div>
 
-        <div className="flex h-[600px] overflow-hidden">
-          <div className="flex-1 bg-gray-900 overflow-y-auto p-6">
-            <div className="space-y-6">
-              {/* Airline Dropdown */}
-              <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Airline</label>
+        <div className="flex h-[650px] overflow-hidden">
+          <div className="flex-1 bg-gradient-to-br from-gray-900/95 to-slate-900/95 backdrop-blur-sm overflow-y-auto p-8">
+            <div className="space-y-8">
+              {/* Enhanced Airline Dropdown */}
+              <div className="bg-gradient-to-br from-gray-800/80 to-slate-800/80 backdrop-blur-sm rounded-2xl border-2 border-gray-600/50 p-6">
+                <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                  ✈️ Airline Selection
+                </label>
                 <div className="relative">
                   <select
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none font-mono"
+                    className="w-full px-6 py-4 bg-gradient-to-r from-gray-700/80 to-slate-700/80 border-2 border-gray-500/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 appearance-none font-semibold text-lg hover:bg-gray-600/80"
                     value={selectedAirline}
                     onChange={e => setSelectedAirline(e.target.value)}
                     disabled={isSending}
+                    required
                   >
+                    <option value="" className="text-white bg-gray-800">Select your airline...</option>
                     {AIRLINES.map(airline => (
                       <option
                         key={airline.id}
                         value={airline.id}
-                        className="font-mono"
+                        className="font-semibold text-white bg-gray-800"
                       >
                         {airline.name}
                       </option>
                     ))}
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <Icon icon="mdi:chevron-down" className="text-gray-400" />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <Icon icon="mdi:chevron-down" className="text-gray-400 text-xl" />
                   </div>
                 </div>
+                {!selectedAirline && (
+                  <div className="mt-2 text-sm text-red-400 flex items-center gap-2">
+                    <Icon icon="mdi:alert-circle" width={16} />
+                    Please select an airline to continue
+                  </div>
+                )}
               </div>
 
-              {/* Pilot ID Input (pre-filled from DB, editable) */}
-              <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Pilot ID</label>
+              {/* Enhanced Pilot ID Input */}
+              <div className="bg-gradient-to-br from-gray-800/80 to-slate-800/80 backdrop-blur-sm rounded-2xl border-2 border-gray-600/50 p-6">
+                <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  🆔 Pilot ID
+                </label>
                 <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 font-mono">
-                    {selectedAirline}
-                  </div>
+                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-bold text-lg bg-gray-600 px-2 py-1 rounded">
+                     JAL
+                   </div>
                   <input
                     type="text"
-                    className="w-full pl-16 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono"
+                    className="w-full pl-20 pr-4 py-4 bg-gradient-to-r from-gray-700/80 to-slate-700/80 border-2 border-gray-500/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all duration-300 font-mono text-lg hover:bg-gray-600/80"
                     value={pilotIdNum}
                     onChange={e => setPilotIdNum(e.target.value.replace(/\D/g, ''))}
-                    placeholder={`Enter your ${selectedAirline} ID NUMBER`}
-                    disabled={isSending}
+                    placeholder={selectedAirline ? `Enter your ${selectedAirline} ID number` : "Select airline first"}
+                    disabled={isSending || !selectedAirline}
+                    required
                   />
                 </div>
-                <div className="mt-2 text-xs text-gray-400">
-                  {loadingPilot ? (
-                    <span className="inline-flex items-center">
-                      <Icon icon="line-md:loading-twotone-loop" className="mr-1 animate-spin" />
-                      Loading Pilot ID from profile…
-                    </span>
-                  ) : pilotIdNum ? (
-                    <>Loaded from profile. You may edit before submitting.</>
+                <div className="mt-3 text-sm text-gray-400">
+                  {!selectedAirline ? (
+                    <div className="flex items-center gap-2 text-yellow-400">
+                      <Icon icon="mdi:information" width={16} />
+                      Please select an airline first
+                    </div>
+                  ) : !pilotIdNum ? (
+                    <div className="flex items-center gap-2 text-red-400">
+                      <Icon icon="mdi:alert-circle" width={16} />
+                      Please enter your pilot ID number
+                    </div>
                   ) : (
-                    <>Couldn’t auto-detect your Pilot ID — please enter it manually.</>
+                     <div className="flex items-center gap-2 text-green-400">
+                       <Icon icon="mdi:check-circle" width={16} />
+                       Pilot ID: JAL{pilotIdNum}
+                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Delay Code Dropdown */}
-              <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Delay Code</label>
+              {/* Enhanced Delay Code Dropdown */}
+              <div className="bg-gradient-to-br from-gray-800/80 to-slate-800/80 backdrop-blur-sm rounded-2xl border-2 border-gray-600/50 p-6">
+                <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  ⚠️ Delay Code
+                </label>
                 <div className="relative">
                   <select
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none font-mono"
+                    className="w-full px-6 py-4 bg-gradient-to-r from-gray-700/80 to-slate-700/80 border-2 border-gray-500/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 appearance-none font-semibold text-lg hover:bg-gray-600/80"
                     value={selectedCode}
                     onChange={e => setSelectedCode(e.target.value)}
                     disabled={isSending}
@@ -313,14 +323,20 @@ const DelayCodeModal = ({
                       <option
                         key={dc.code}
                         value={dc.code}
-                        className="font-mono"
+                        className="font-semibold"
                       >
                         {dc.code} - {dc.reason}
                       </option>
                     ))}
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <Icon icon="mdi:chevron-down" className="text-gray-400" />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <Icon icon="mdi:chevron-down" className="text-gray-400 text-xl" />
+                  </div>
+                </div>
+                <div className="mt-3 text-sm text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mdi:information" width={16} />
+                    Select the appropriate delay code for your situation
                   </div>
                 </div>
               </div>
@@ -328,41 +344,43 @@ const DelayCodeModal = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 px-6 py-4 flex justify-between items-center">
+        {/* Enhanced Footer */}
+        <div className="sticky bottom-0 bg-gradient-to-r from-gray-800/95 to-slate-800/95 backdrop-blur-sm border-t border-gray-600/50 px-8 py-6 flex justify-between items-center">
           {feedback && (
-            <div className={`text-sm font-medium px-3 py-1.5 rounded ${
-              feedback.type === 'success' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
+            <div className={`text-sm font-bold px-4 py-2 rounded-xl border-2 backdrop-blur-sm ${
+              feedback.type === 'success' 
+                ? 'bg-gradient-to-r from-green-900/40 to-green-800/40 text-green-300 border-green-500/50 shadow-lg shadow-green-500/20' 
+                : 'bg-gradient-to-r from-red-900/40 to-red-800/40 text-red-300 border-red-500/50 shadow-lg shadow-red-500/20'
             }`}>
               {feedback.message}
             </div>
           )}
 
-          <div className="flex space-x-3 ml-auto">
+          <div className="flex space-x-4 ml-auto">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-gray-700 to-gray-600 border-2 border-gray-500/50 rounded-xl hover:from-gray-600 hover:to-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400/50 transition-all duration-300 transform hover:scale-105"
             >
               Cancel
             </button>
             <button
               onClick={handleSend}
-              disabled={isSending || !pilotIdNum.trim()}
-              className={`px-5 py-2.5 text-sm font-medium text-white rounded-lg flex items-center space-x-2 ${
-                isSending || !pilotIdNum.trim()
-                  ? 'bg-blue-600/50 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+              disabled={isSending || !selectedAirline.trim() || !pilotIdNum.trim()}
+              className={`px-8 py-3 text-sm font-bold text-white rounded-xl flex items-center space-x-3 transition-all duration-300 transform hover:scale-105 ${
+                isSending || !selectedAirline.trim() || !pilotIdNum.trim()
+                  ? 'bg-gradient-to-r from-gray-600 to-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 shadow-lg hover:shadow-xl'
               }`}
             >
               {isSending ? (
                 <>
-                  <Icon icon="line-md:loading-twotone-loop" className="animate-spin" />
-                  <span>Sending...</span>
+                  <Icon icon="line-md:loading-twotone-loop" className="animate-spin text-xl" />
+                  <span>🚀 Sending Report...</span>
                 </>
               ) : (
                 <>
-                  <Icon icon="mdi:send" />
-                  <span>Submit</span>
+                  <Icon icon="mdi:send" className="text-xl" />
+                  <span>📤 Submit Delay Report</span>
                 </>
               )}
             </button>
@@ -374,3 +392,4 @@ const DelayCodeModal = ({
 }
 
 export default DelayCodeModal
+

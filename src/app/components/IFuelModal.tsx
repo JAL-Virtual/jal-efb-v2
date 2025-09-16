@@ -111,22 +111,29 @@ export default function IFuelModal({
   return (
     <Modal onClose={onClose} wide>
       <AnimatedModalBg />
-      <div className="max-w-2xl mx-auto bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8 rounded-2xl shadow-2xl border border-gray-700 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#b60c18] to-[#ea4256]"></div>
-        <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#b60c18] opacity-20 rounded-full"></div>
-        <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-[#ea4256] opacity-20 rounded-full"></div>
+      <div className="max-w-3xl mx-auto bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white p-10 rounded-3xl shadow-2xl border border-gray-600/50 relative overflow-hidden backdrop-blur-xl">
+        {/* Enhanced Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#b60c18] via-[#ea4256] to-[#b60c18] animate-pulse"></div>
+        <div className="absolute -top-16 -right-16 w-32 h-32 bg-gradient-to-br from-[#b60c18]/30 to-[#ea4256]/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-gradient-to-tr from-[#ea4256]/30 to-[#b60c18]/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-r from-[#b60c18]/10 to-[#ea4256]/10 rounded-full blur-2xl"></div>
         
-        <h2 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-[#b60c18] to-[#ea4256] bg-clip-text text-transparent">
-          FUEL REQUEST
-        </h2>
-        <p className="text-gray-400 text-center mb-8 text-sm">AT RAMP - JAL VIRTUAL</p>
+        <div className="text-center mb-10 relative z-10">
+          <h2 className="text-4xl font-black mb-3 bg-gradient-to-r from-[#b60c18] via-[#ea4256] to-[#b60c18] bg-clip-text text-transparent animate-pulse">
+            ⛽ FUEL REQUEST
+          </h2>
+          <p className="text-gray-300 text-lg font-medium">AT RAMP - JAL VIRTUAL</p>
+          <div className="w-24 h-1 bg-gradient-to-r from-[#b60c18] to-[#ea4256] mx-auto mt-3 rounded-full"></div>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative z-10">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Callsign</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#b60c18] rounded-full"></span>
+              Callsign
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18]/50 focus:border-[#b60c18] transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium"
               placeholder="e.g. JL123"
               value={fields.callsign}
               onChange={e => setFields(f => ({ ...f, callsign: e.target.value }))}
@@ -134,9 +141,12 @@ export default function IFuelModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Departure</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#ea4256] rounded-full"></span>
+              Departure
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all uppercase"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#ea4256]/50 focus:border-[#ea4256] transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium uppercase"
               placeholder="ICAO"
               value={fields.dep}
               onChange={e => setFields(f => ({ ...f, dep: e.target.value.toUpperCase() }))}
@@ -145,9 +155,12 @@ export default function IFuelModal({
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Arrival</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#ea4256] rounded-full"></span>
+              Arrival
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all uppercase"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#ea4256]/50 focus:border-[#ea4256] transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium uppercase"
               placeholder="ICAO"
               value={fields.arr}
               onChange={e => setFields(f => ({ ...f, arr: e.target.value.toUpperCase() }))}
@@ -156,9 +169,12 @@ export default function IFuelModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">ETOW (KG)</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+              ETOW (KG)
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium"
               type="number"
               min={0}
               placeholder="Estimated TOW"
@@ -168,9 +184,12 @@ export default function IFuelModal({
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">MTOW (KG)</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+              MTOW (KG)
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium"
               type="number"
               min={0}
               placeholder="Max TOW"
@@ -180,9 +199,12 @@ export default function IFuelModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">MIN FUEL (KG)</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              MIN FUEL (KG)
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium"
               type="number"
               min={0}
               placeholder="Minimum required"
@@ -192,9 +214,12 @@ export default function IFuelModal({
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">EXTRA FUEL (KG)</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              EXTRA FUEL (KG)
+            </label>
             <input
-              className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/70 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#b60c18] focus:border-transparent transition-all"
+              className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium"
               type="number"
               min={0}
               placeholder="Additional fuel"
@@ -204,65 +229,71 @@ export default function IFuelModal({
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">TOTAL FUEL (KG)</label>
-            <div className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800/40 backdrop-blur-sm text-white font-mono text-lg">
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+              TOTAL FUEL (KG)
+            </label>
+            <div className="w-full p-5 border-2 border-yellow-500/50 rounded-xl bg-gradient-to-r from-gray-800/60 to-gray-700/60 backdrop-blur-sm text-white font-mono text-2xl font-bold text-center shadow-lg shadow-yellow-500/20">
               {totalFuel.toLocaleString()} KG
             </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-2">FUEL TYPE</label>
+            <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+              FUEL TYPE
+            </label>
             <div className="flex gap-4">
               <button
                 type="button"
                 onClick={() => handleFuelType('JET A1')}
-                className={`flex-1 py-3 rounded-lg font-semibold border transition-all ${
+                className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all duration-300 transform hover:scale-105 ${
                   fields.fuelType === 'JET A1'
-                    ? 'bg-gradient-to-r from-[#b60c18] to-[#d63c4c] text-white border-[#b60c18] shadow-lg shadow-[#b60c18]/30'
-                    : 'bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-r from-[#b60c18] to-[#d63c4c] text-white border-[#b60c18] shadow-xl shadow-[#b60c18]/40 scale-105'
+                    : 'bg-gray-800/70 text-gray-300 border-gray-500 hover:bg-gray-700/50 hover:border-gray-400'
                 }`}
               >
-                JET A1
+                ⛽ JET A1
               </button>
               <button
                 type="button"
                 onClick={() => handleFuelType('SAF')}
-                className={`flex-1 py-3 rounded-lg font-semibold border transition-all ${
+                className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all duration-300 transform hover:scale-105 ${
                   fields.fuelType === 'SAF'
-                    ? 'bg-gradient-to-r from-[#0cb654] to-[#2dd673] text-white border-[#0cb654] shadow-lg shadow-[#0cb654]/30'
-                    : 'bg-gray-800/70 text-gray-300 border-gray-600 hover:bg-gray-700/50'
+                    ? 'bg-gradient-to-r from-[#0cb654] to-[#2dd673] text-white border-[#0cb654] shadow-xl shadow-[#0cb654]/40 scale-105'
+                    : 'bg-gray-800/70 text-gray-300 border-gray-500 hover:bg-gray-700/50 hover:border-gray-400'
                 }`}
               >
-                SUSTAINABLE AVIATION FUEL
+                🌱 SUSTAINABLE AVIATION FUEL
               </button>
             </div>
           </div>
         </div>
         
-        <div className="flex flex-col gap-4 relative z-10">
+        <div className="flex flex-col gap-6 relative z-10">
           <button
             onClick={handleConfirm}
             disabled={isSending}
-            className="w-full py-3.5 rounded-lg font-semibold shadow-lg bg-gradient-to-r from-[#b60c18] to-[#ea4256] text-white hover:shadow-xl hover:from-[#c21c28] hover:to-[#ea5266] transition-all duration-300 transform hover:-translate-y-0.5 text-lg flex items-center justify-center"
+            className="w-full py-5 rounded-2xl font-black shadow-2xl bg-gradient-to-r from-[#b60c18] via-[#ea4256] to-[#b60c18] text-white hover:shadow-3xl hover:from-[#c21c28] hover:via-[#ea5266] hover:to-[#c21c28] transition-all duration-500 transform hover:-translate-y-1 hover:scale-105 text-xl flex items-center justify-center border-2 border-white/20 backdrop-blur-sm"
           >
             {isSending ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-4 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                SENDING REQUEST...
+                🚀 SENDING REQUEST...
               </>
             ) : (
-              'CONFIRM FUEL REQUEST'
+              '🚀 CONFIRM FUEL REQUEST'
             )}
           </button>
           
           {feedback && (
-            <div className={`p-3 rounded-lg text-center font-medium ${
+            <div className={`p-4 rounded-xl text-center font-bold text-lg border-2 backdrop-blur-sm ${
               feedback.includes("✅") 
-                ? "bg-green-900/30 text-green-400 border border-green-800/50" 
-                : "bg-red-900/30 text-red-400 border border-red-800/50"
+                ? "bg-gradient-to-r from-green-900/40 to-green-800/40 text-green-300 border-green-500/50 shadow-lg shadow-green-500/20" 
+                : "bg-gradient-to-r from-red-900/40 to-red-800/40 text-red-300 border-red-500/50 shadow-lg shadow-red-500/20"
             }`}>
               {feedback}
             </div>

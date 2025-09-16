@@ -163,68 +163,76 @@ export default function WorldClockModal({ show, onClose }: { show: boolean; onCl
 
   return (
     <Modal onClose={onClose} wide>
-      <div className="relative w-full max-w-6xl bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-700">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-gray-800 px-6 py-4 border-b border-gray-700 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <Icon icon="mdi:clock-outline" className="text-xl text-blue-400" />
-            <h2 className="text-xl font-semibold text-white">{t.clock.title}</h2>
+      <div className="relative w-full max-w-7xl bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-600/50 backdrop-blur-xl">
+        {/* Enhanced Header */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-800/95 to-slate-800/95 backdrop-blur-sm px-8 py-6 border-b border-gray-600/50 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+              <Icon icon="mdi:clock-outline" width={28} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                🕐 {t.clock.title}
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">World time zones and airport clocks</p>
+            </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
-          >
-            {/* close button removed; wrapper handles closing */}
-          </button>
+          {/* Enhanced decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-2xl"></div>
         </div>
         
-        <div className="flex h-[600px] overflow-hidden">
-          {/* Navigation - Continents */}
-          <div className="w-64 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
-            <div className="space-y-1">
+        <div className="flex h-[650px] overflow-hidden">
+          {/* Enhanced Navigation - Continents */}
+          <div className="w-72 bg-gradient-to-b from-gray-800/95 to-slate-800/95 backdrop-blur-sm border-r border-gray-600/50 p-6 overflow-y-auto">
+            <div className="space-y-3">
               {CONTINENTS.map((continent) => (
                 <button
                   key={continent.name}
                   onClick={() => setSelectedContinent(continent)}
-                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                  className={`w-full text-left px-5 py-4 rounded-xl flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 ${
                     selectedContinent.name === continent.name
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
+                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
                   }`}
                 >
-                  <Icon 
-                    icon={
-                      continent.name === 'North America' ? 'mdi:earth-americas' :
-                      continent.name === 'South America' ? 'mdi:earth-americas' :
-                      continent.name === 'Europe' ? 'mdi:earth-europe' :
-                      continent.name === 'Africa' ? 'mdi:earth-africa' :
-                      continent.name === 'Asia' ? 'mdi:earth-asia' :
-                      'mdi:earth-oceania'
-                    } 
-                    width={20} 
-                  />
-                  <span>{continent.name}</span>
+                  <div className={`p-2 rounded-lg ${selectedContinent.name === continent.name ? 'bg-white/20' : 'bg-gray-700/50'}`}>
+                    <Icon 
+                      icon={
+                        continent.name === 'North America' ? 'mdi:earth-americas' :
+                        continent.name === 'South America' ? 'mdi:earth-americas' :
+                        continent.name === 'Europe' ? 'mdi:earth-europe' :
+                        continent.name === 'Africa' ? 'mdi:earth-africa' :
+                        continent.name === 'Asia' ? 'mdi:earth-asia' :
+                        'mdi:earth-oceania'
+                      } 
+                      width={20} 
+                    />
+                  </div>
+                  <div>
+                    <div className="font-semibold">{continent.name}</div>
+                    <div className="text-xs opacity-75">{continent.airports.length} airports</div>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Main Content - Airports */}
-          <div className="flex-1 bg-gray-900 overflow-y-auto p-6">
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4 mb-6">
-                <Icon icon="mdi:clock-outline" width={28} className="text-blue-400 flex-shrink-0" />
+          {/* Enhanced Main Content - Airports */}
+          <div className="flex-1 bg-gradient-to-br from-gray-900/95 to-slate-900/95 backdrop-blur-sm overflow-y-auto p-8">
+            <div className="space-y-8">
+              <div className="flex items-center space-x-6 mb-8">
+                <div className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
+                  <Icon icon="mdi:clock-outline" width={32} className="text-white" />
+                </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {selectedContinent.name}
+                  <h3 className="text-2xl font-bold text-white">
+                    🌍 {selectedContinent.name}
                   </h3>
-                  <p className="text-sm text-gray-400">
-                    Airports ordered by current local time
-                  </p>
+                  <p className="text-gray-400 mt-2">Airports ordered by current local time</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedAirports.map((airport) => {
                   const localTime = currentTime.toLocaleTimeString('en-US', {
                     timeZone: airport.timezone,
@@ -245,24 +253,26 @@ export default function WorldClockModal({ show, onClose }: { show: boolean; onCl
                   return (
                     <div 
                       key={airport.code} 
-                      className="p-4 rounded-lg border border-blue-800/30 bg-gray-800/50 transition-all hover:shadow-lg hover:scale-[1.02] flex flex-col items-center"
+                      className="p-6 rounded-2xl border-2 border-blue-500/30 bg-gradient-to-br from-gray-800/80 to-slate-800/80 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-105 hover:border-blue-400/50 flex flex-col items-center"
                     >
-                      <AnalogClock timezone={airport.timezone} />
-                      <div className="mt-4 text-center w-full">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-medium text-white">{airport.city}</h3>
-                          <span className="text-xs px-2 py-1 rounded bg-blue-900/30 text-blue-300">
+                      <div className="mb-4">
+                        <AnalogClock timezone={airport.timezone} />
+                      </div>
+                      <div className="text-center w-full">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="font-bold text-white text-lg">{airport.city}</h3>
+                          <span className="text-sm px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold">
                             {airport.code}
                           </span>
                         </div>
-                        <div className="text-2xl font-mono font-bold text-blue-400 mb-1">
+                        <div className="text-3xl font-mono font-black text-blue-400 mb-2">
                           {localTime}
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>{localDate}</span>
-                          <span>{utcOffset}</span>
+                        <div className="flex justify-between text-sm text-gray-300 mb-2">
+                          <span className="font-medium">{localDate}</span>
+                          <span className="font-mono">{utcOffset}</span>
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="text-sm text-gray-400 font-medium">
                           {airport.country}
                         </div>
                       </div>

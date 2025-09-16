@@ -348,97 +348,114 @@ export default function WeatherModal({ show, onClose }: Props) {
         }
       `}</style>
 
-      <div className="relative w-full max-w-6xl bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-700">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-gray-800 px-6 py-4 border-b border-gray-700 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <Icon icon="mdi:weather-partly-cloudy" width={24} className="text-blue-400" />
-            <h2 className="text-2xl font-semibold text-white">Weather</h2>
+      <div className="relative w-full max-w-7xl bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-600/50 backdrop-blur-xl">
+        {/* Enhanced Header */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-800/95 to-slate-800/95 backdrop-blur-sm px-8 py-6 border-b border-gray-600/50 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+              <Icon icon="mdi:weather-partly-cloudy" width={28} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                🌤️ Weather Center
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">Real-time aviation weather data</p>
+            </div>
           </div>
-          {/* close button removed; wrapper handles closing */}
+          {/* Enhanced decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-2xl"></div>
         </div>
 
-        <div className="flex h-[600px] overflow-hidden">
-          {/* Navigation */}
-          <div className="w-64 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
-            <div className="space-y-1">
+        <div className="flex h-[650px] overflow-hidden">
+          {/* Enhanced Navigation */}
+          <div className="w-72 bg-gradient-to-b from-gray-800/95 to-slate-800/95 backdrop-blur-sm border-r border-gray-600/50 p-6 overflow-y-auto">
+            <div className="space-y-3">
               {([
-                {id: 'lookup', icon: 'mdi:weather-cloudy', label: 'METAR/TAF Lookup'},
-                {id: 'decoded', icon: 'mdi:file-document-outline', label: 'Decoded Report'},
-              ] as {id: 'lookup' | 'decoded', icon: string, label: string}[]).map((item) => (
+                {id: 'lookup', icon: 'mdi:weather-cloudy', label: 'METAR/TAF Lookup', emoji: '🔍'},
+                {id: 'decoded', icon: 'mdi:file-document-outline', label: 'Decoded Report', emoji: '📊'},
+              ] as {id: 'lookup' | 'decoded', icon: string, label: string, emoji: string}[]).map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                  className={`w-full text-left px-5 py-4 rounded-xl flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 ${
                     activeSection === item.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
+                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
                   }`}
                   disabled={item.id === 'decoded' && !metar}
                 >
-                  <Icon icon={item.icon} width={20} />
-                  <span>{item.label}</span>
+                  <div className={`p-2 rounded-lg ${activeSection === item.id ? 'bg-white/20' : 'bg-gray-700/50'}`}>
+                    <Icon icon={item.icon} width={20} />
+                  </div>
+                  <div>
+                    <div className="font-semibold">{item.emoji} {item.label}</div>
+                    <div className="text-xs opacity-75">
+                      {item.id === 'lookup' ? 'Fetch weather data' : 'View decoded info'}
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Content Area */}
-          <div className="flex-1 bg-gray-900 overflow-y-auto p-6">
+          {/* Enhanced Content Area */}
+          <div className="flex-1 bg-gradient-to-br from-gray-900/95 to-slate-900/95 backdrop-blur-sm overflow-y-auto p-8">
             {/* Lookup Section */}
             {activeSection === 'lookup' && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-4 mb-6">
-                  <Icon icon="mdi:weather-cloudy" width={28} className="text-blue-400 flex-shrink-0" />
+              <div className="space-y-8">
+                <div className="flex items-center space-x-6 mb-8">
+                  <div className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
+                    <Icon icon="mdi:weather-cloudy" width={32} className="text-white" />
+                  </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">METAR / TAF Lookup</h3>
-                    <p className="text-sm text-gray-400">Fetch current weather reports for any airport</p>
+                    <h3 className="text-2xl font-bold text-white">🔍 METAR / TAF Lookup</h3>
+                    <p className="text-gray-400 mt-2">Fetch real-time weather reports for any airport worldwide</p>
                   </div>
                 </div>
 
-                {/* Search Input */}
-                <div className="mb-6">
+                {/* Enhanced Search Input */}
+                <div className="mb-8">
                   <div className="relative">
                     <input
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition uppercase tracking-widest"
+                      className="w-full px-6 py-4 bg-gradient-to-r from-gray-800/80 to-slate-800/80 border-2 border-gray-600/50 rounded-2xl text-white font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 uppercase tracking-widest backdrop-blur-sm hover:bg-gray-700/80"
                       value={icao}
                       onChange={e => setIcao(e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())}
-                      placeholder="Enter ICAO code"
+                      placeholder="Enter ICAO code (e.g., RJTT)"
                       maxLength={4}
                       autoFocus
                       spellCheck={false}
                     />
-                    <span className="absolute right-3 top-3 text-blue-400 pointer-events-none">
-                      <Icon icon="mdi:airplane" width={20} />
-                    </span>
+                    <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
+                      <Icon icon="mdi:airplane" width={20} className="text-white" />
+                    </div>
                   </div>
                   
-                  <div className="flex space-x-3 mt-4">
+                  <div className="flex space-x-4 mt-6">
                     <button
                       onClick={handleFetch}
                       disabled={loading || icao.length !== 4}
-                      className={`flex-1 px-4 py-3 rounded-md font-medium text-white transition-colors ${
+                      className={`flex-1 px-6 py-4 rounded-2xl font-bold text-white transition-all duration-300 transform hover:scale-105 ${
                         loading || icao.length !== 4
-                          ? 'bg-blue-900 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700'
+                          ? 'bg-gradient-to-r from-gray-700 to-gray-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl'
                       }`}
                     >
                       {loading ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Icon icon="mdi:loading" className="animate-spin" width={20} />
-                          Fetching...
+                        <span className="inline-flex items-center gap-3">
+                          <Icon icon="mdi:loading" className="animate-spin" width={24} />
+                          🌤️ Fetching Weather Data...
                         </span>
                       ) : (
-                        'Fetch METAR & TAF'
+                        '🌤️ Fetch METAR & TAF'
                       )}
                     </button>
 
                     {metar && (
                       <button
                         onClick={handleDecode}
-                        className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-md text-white font-medium transition-colors"
+                        className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-2xl text-white font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                       >
-                        Decode METAR
+                        📊 Decode METAR
                       </button>
                     )}
                   </div>
