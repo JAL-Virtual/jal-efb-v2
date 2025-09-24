@@ -24,6 +24,7 @@ export interface Translations {
     loadsheet: string;
     flightTools: string;
     clockZulu: string;
+    gsxControl: string;
   };
   
   // Wind Calculator
@@ -142,6 +143,7 @@ const translations: Record<Language, Translations> = {
       loadsheet: 'Loadsheet',
       flightTools: 'Flight Tools',
       clockZulu: 'Clock / Zulu',
+      gsxControl: 'GSX Control',
     },
     windCalculator: {
       title: 'Wind Component Calculator',
@@ -236,6 +238,7 @@ const translations: Record<Language, Translations> = {
       loadsheet: 'แผ่นโหลด',
       flightTools: 'เครื่องมือการบิน',
       clockZulu: 'นาฬิกา / Zulu',
+      gsxControl: 'ควบคุม GSX',
     },
     windCalculator: {
       title: 'เครื่องคำนวณองค์ประกอบลม',
@@ -330,6 +333,7 @@ const translations: Record<Language, Translations> = {
       loadsheet: '载重单',
       flightTools: '飞行工具',
       clockZulu: '时钟 / Zulu',
+      gsxControl: 'GSX 控制',
     },
     windCalculator: {
       title: '风力分量计算器',
@@ -424,6 +428,7 @@ const translations: Record<Language, Translations> = {
       loadsheet: 'ロードシート',
       flightTools: 'フライトツール',
       clockZulu: '時計 / Zulu',
+      gsxControl: 'GSX コントロール',
     },
     windCalculator: {
       title: '風成分計算機',
@@ -518,6 +523,7 @@ const translations: Record<Language, Translations> = {
       loadsheet: '로드시트',
       flightTools: '비행 도구',
       clockZulu: '시계 / Zulu',
+      gsxControl: 'GSX 제어',
     },
     windCalculator: {
       title: '바람 성분 계산기',

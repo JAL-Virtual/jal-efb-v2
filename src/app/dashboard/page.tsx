@@ -32,6 +32,7 @@ const FlighttoolModal = dynamic(() => import("../components/FlightToolsModal").t
 const MapComponent = dynamic(() => import("../map/MapComponent").then(m => m.default), { ssr: false });
 const ClockModal = dynamic(() => import("../components/ClockModal").then(m => m.default), { ssr: false });
 const WindCalculatorModal = dynamic(() => import("../components/WindCalculatorModal").then(m => m.default), { ssr: false });
+const GSXControlModal = dynamic(() => import("../components/GSXControlModal").then(m => m.default), { ssr: false });
 
 /* -------------------------------------------------------------------------- */
 /* Images (local in /public) */
@@ -96,6 +97,7 @@ const ICONS: Record<string, StaticImageData | undefined> = {
   plane: icon_plane,
   home: icon_home,
   wind: icon_wind,
+  gsx: undefined, // Will use iconify fallback
 };
 
 const iconifyFallback: Record<string, string> = {
@@ -103,6 +105,7 @@ const iconifyFallback: Record<string, string> = {
   clock: "mdi:clock-outline",
   notam: "mdi:alert-decagram-outline",
   crew: "mdi:account-group-outline",
+  gsx: "mdi:airplane-settings",
 };
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap" });
@@ -125,6 +128,7 @@ const getButtons = (t: any) => [
   { id: "flighttools", label: t.buttons.flightTools, icon: "flighttools", modal: "flighttool" as const },
   { id: "clock", label: t.buttons.clockZulu, icon: "clock", modal: "clock" as const },
   { id: "windcalc", label: t.buttons.windCalc, icon: "wind", modal: "windcalc" as const },
+  { id: "gsx", label: t.buttons.gsxControl, icon: "gsx", modal: "gsx" as const },
 ] as const;
 
 export type LoadsheetFields = {
@@ -150,6 +154,7 @@ type ModalKey =
   | "map"
   | "clock"
   | "windcalc"
+  | "gsx"
   | null;
 
 // Isomorphic layout effect
@@ -573,15 +578,21 @@ export default function Dashboard() {
   }, [user, apiKey]);
 
   return (
-    <div className={`${poppins.className} relative w-full min-h-screen overflow-x-hidden transition-colors duration-300 ${isDark ? "bg-gray-950 text-white" : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900"}`}>
-      {/* Background */}
-      <div className="fixed inset-0 z-0 opacity-20 dark:opacity-10 transition-opacity duration-700">
-        <Image src={isDark ? bgDark : bg} alt="JAL Background" fill sizes="100vw" style={{ objectFit: "cover" }} priority />
-        {/* decorative gradients */}
+    <div className={`${poppins.className} relative w-full min-h-screen overflow-x-hidden transition-all duration-500 ${isDark ? "bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 text-white" : "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-900"}`}>
+      {/* Enhanced Background */}
+      <div className="fixed inset-0 z-0 transition-opacity duration-700">
+        <Image src={isDark ? bgDark : bg} alt="JAL Background" fill sizes="100vw" style={{ objectFit: "cover" }} priority className="opacity-15 dark:opacity-8" />
+        {/* Beautiful gradient overlays */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-24 -left-24 w-[40rem] h-[40rem] rounded-full bg-rose-400/25 blur-3xl animate-pulse-slow" />
-          <div className="absolute bottom-0 right-0 w-[36rem] h-[36rem] rounded-full bg-amber-300/20 blur-3xl animate-pulse-slower" />
+          <div className={`absolute -top-32 -left-32 w-[50rem] h-[50rem] rounded-full blur-3xl animate-pulse-slow ${isDark ? "bg-gradient-to-r from-red-500/20 via-pink-500/15 to-purple-500/20" : "bg-gradient-to-r from-blue-400/25 via-indigo-400/20 to-purple-400/25"}`} />
+          <div className={`absolute top-1/2 -right-32 w-[45rem] h-[45rem] rounded-full blur-3xl animate-pulse-slower ${isDark ? "bg-gradient-to-l from-amber-500/15 via-orange-500/10 to-red-500/15" : "bg-gradient-to-l from-emerald-400/20 via-teal-400/15 to-blue-400/20"}`} />
+          <div className={`absolute -bottom-24 left-1/3 w-[35rem] h-[35rem] rounded-full blur-3xl animate-pulse-slow ${isDark ? "bg-gradient-to-t from-purple-500/10 via-pink-500/8 to-red-500/10" : "bg-gradient-to-t from-violet-400/15 via-purple-400/10 to-indigo-400/15"}`} />
         </div>
+        {/* Subtle grid pattern */}
+        <div className={`absolute inset-0 opacity-5 dark:opacity-3 ${isDark ? "bg-gradient-to-r from-white/10 0%, transparent 50%, from-white/10 100%" : "bg-gradient-to-r from-gray-900/10 0%, transparent 50%, from-gray-900/10 100%"}`} style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+          backgroundSize: '20px 20px'
+        }} />
       </div>
 
       {/* Toaster */}
@@ -596,106 +607,328 @@ export default function Dashboard() {
       </div>
 
       {/* Main */}
-      <main className="relative z-10 w-full px-0 sm:px-0 pt-4 pb-28">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-          {/* Homescreen header */}
-          <div className="flex items-center justify-between mb-6 text-white/90">
-            <div className="text-xs sm:text-sm opacity-90">
-              <span>UTC </span>
-              <time suppressHydrationWarning>{utcTime}</time>
-            </div>
-            <div className="flex items-center gap-2 text-xs opacity-80">
-              <span className="mx-2">•••</span>
-              <Icon icon="mdi:wifi" />
-              <Icon icon="mdi:battery" />
-              <div className={`hidden sm:flex items-center gap-2 px-2 py-1 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`}>
-                <span className="hidden md:inline">{`${t.dashboard.welcomeBack}, ${userDisplay}`}</span>
-                <button onClick={handleLogout} disabled={authBusy} className={`text-[11px] px-2 py-0.5 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white border-black/10"}`}>{t.dashboard.logout}</button>
+      <main className="relative z-10 w-full px-0 sm:px-0 pt-6 pb-32">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+          {/* Enhanced Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className={`relative backdrop-blur-xl rounded-3xl p-6 mb-8 border ${isDark ? "bg-white/5 border-white/10 shadow-2xl" : "bg-white/40 border-white/20 shadow-xl"} transition-all duration-300`}
+          >
+            <div className="flex items-center justify-between">
+              {/* Left side - Time and Status */}
+              <div className="flex items-center gap-6">
+                <div className={`flex items-center gap-3 px-4 py-2 rounded-2xl ${isDark ? "bg-white/10 border border-white/20" : "bg-white/60 border border-white/40"} backdrop-blur-sm`}>
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mdi:clock-outline" className="text-lg" />
+                    <span className="text-sm font-medium">UTC</span>
+                  </div>
+                  <time suppressHydrationWarning className="text-lg font-bold font-mono">{utcTime}</time>
+                </div>
+                
+                {/* Status indicators */}
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isDark ? "bg-green-500/20 border border-green-500/30" : "bg-green-100/80 border border-green-200/60"} backdrop-blur-sm`}>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-medium">Online</span>
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isDark ? "bg-blue-500/20 border border-blue-500/30" : "bg-blue-100/80 border border-blue-200/60"} backdrop-blur-sm`}>
+                    <Icon icon="mdi:wifi" className="text-sm" />
+                    <span className="text-xs font-medium">Connected</span>
+                  </div>
+                </div>
               </div>
-              <Link href="/dashboard" className={`inline-flex items-center justify-center h-7 w-7 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`} aria-label="Home">
-                <Icon icon="mdi:home-outline" className="text-base" />
-              </Link>
-              <button onClick={() => setActiveModal("settings")} className={`inline-flex items-center justify-center h-7 w-7 rounded-full border ${isDark ? "bg-white/5 border-white/10" : "bg-white/70 text-gray-900 border-black/10"}`} aria-label="Settings">
-                <Icon icon="mdi:cog" className="text-base" />
-              </button>
-            </div>
-          </div>
 
-          {/* Button Grid */}
-          <motion.div variants={gridAnim} initial="hidden" animate="show" className="grid w-full gap-4 sm:gap-5 [grid-template-columns:repeat(auto-fit,minmax(92px,1fr))]">
-            {getButtons(t).map((b) => {
-              const iconBg = isDark ? "" : "";
+              {/* Right side - User info and controls */}
+              <div className="flex items-center gap-4">
+                {/* User welcome */}
+                <div className={`hidden lg:flex items-center gap-3 px-4 py-2 rounded-2xl ${isDark ? "bg-white/10 border border-white/20" : "bg-white/60 border border-white/40"} backdrop-blur-sm`}>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
+                    <Icon icon="mdi:account" className="text-white text-sm" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{`${t.dashboard.welcomeBack}`}</p>
+                    <p className="text-xs opacity-70">{userDisplay}</p>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  <Link 
+                    href="/dashboard" 
+                    className={`inline-flex items-center justify-center h-10 w-10 rounded-xl border transition-all duration-200 hover:scale-105 ${isDark ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-white/60 border-white/40 hover:bg-white/80"} backdrop-blur-sm`} 
+                    aria-label="Home"
+                  >
+                    <Icon icon="mdi:home-outline" className="text-lg" />
+                  </Link>
+                  <button 
+                    onClick={() => setActiveModal("settings")} 
+                    className={`inline-flex items-center justify-center h-10 w-10 rounded-xl border transition-all duration-200 hover:scale-105 ${isDark ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-white/60 border-white/40 hover:bg-white/80"} backdrop-blur-sm`} 
+                    aria-label="Settings"
+                  >
+                    <Icon icon="mdi:cog" className="text-lg" />
+                  </button>
+                  <button 
+                    onClick={handleLogout} 
+                    disabled={authBusy}
+                    className={`inline-flex items-center justify-center h-10 w-10 rounded-xl border transition-all duration-200 hover:scale-105 disabled:opacity-50 ${isDark ? "bg-red-500/20 border-red-500/30 hover:bg-red-500/30" : "bg-red-100/80 border-red-200/60 hover:bg-red-200/80"} backdrop-blur-sm`}
+                    aria-label="Logout"
+                  >
+                    <Icon icon="mdi:logout" className="text-lg" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+
+          {/* Enhanced Button Grid */}
+          <motion.div 
+            variants={gridAnim} 
+            initial="hidden" 
+            animate="show" 
+            className="grid w-full gap-6 sm:gap-8 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))] max-w-6xl mx-auto"
+          >
+            {getButtons(t).map((b, index) => {
               const commonInner = (
                 <>
-                  <CustomIcon iconName={b.icon} className="w-7 h-7 sm:w-8 sm:h-8" />
+                  <CustomIcon iconName={b.icon} className="w-8 h-8 sm:w-10 sm:h-10 transition-transform duration-200 group-hover:scale-110" />
                 </>
               );
+              
+              const buttonContent = (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ 
+                    delay: index * 0.05, 
+                    duration: 0.4, 
+                    ease: "easeOut" 
+                  }}
+                  whileHover={{ 
+                    y: -8, 
+                    scale: 1.02,
+                    transition: { duration: 0.2, ease: "easeOut" }
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`group relative w-full h-32 sm:h-36 flex flex-col items-center justify-center rounded-3xl border transition-all duration-300 cursor-pointer overflow-hidden ${
+                    isDark 
+                      ? "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-2xl hover:shadow-red-500/10" 
+                      : "bg-white/60 border-white/40 hover:bg-white/80 hover:border-white/60 hover:shadow-xl hover:shadow-red-500/5"
+                  } backdrop-blur-xl`}
+                >
+                  {/* Gradient overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 via-pink-500/0 to-purple-500/0 group-hover:from-red-500/10 group-hover:via-pink-500/5 group-hover:to-purple-500/10 transition-all duration-300 rounded-3xl" />
+                  
+                  {/* Icon container */}
+                  <div className={`relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-all duration-300 ${
+                    isDark 
+                      ? "bg-white/10 group-hover:bg-white/20" 
+                      : "bg-white/80 group-hover:bg-white"
+                  } backdrop-blur-sm shadow-lg group-hover:shadow-xl`}>
+                    {commonInner}
+                  </div>
+                  
+                  {/* Label */}
+                  <span className={`relative z-10 mt-3 text-sm sm:text-base font-semibold text-center transition-colors duration-300 ${
+                    isDark ? "text-white/90 group-hover:text-white" : "text-gray-800 group-hover:text-gray-900"
+                  }`}>
+                    {b.label}
+                  </span>
+                  
+                  {/* Subtle glow effect */}
+                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-red-500/5 via-pink-500/5 to-purple-500/5 blur-xl" />
+                </motion.div>
+              );
+
               if ("modal" in b && (b as any).modal) {
                 return (
-                  <ButtonTile key={b.id} id={b.id} label={b.label} onClick={() => setActiveModal((b as any).modal as ModalKey)}>
-                    {commonInner}
-                  </ButtonTile>
+                  <button 
+                    key={b.id} 
+                    type="button"
+                    onClick={() => setActiveModal((b as any).modal as ModalKey)}
+                    className="focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-transparent rounded-3xl"
+                  >
+                    {buttonContent}
+                  </button>
                 );
               }
+              
               if ((b as any).href) {
                 return (
-                  <ButtonTile key={b.id} id={b.id} label={b.label} href={(b as any).href} external={(b as any).external}>
-                    {commonInner}
-                  </ButtonTile>
+                  <Link 
+                    key={b.id} 
+                    href={(b as any).href} 
+                    target={(b as any).external ? "_blank" : undefined}
+                    rel={(b as any).external ? "noopener noreferrer" : undefined}
+                    className="focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-transparent rounded-3xl"
+                  >
+                    {buttonContent}
+                  </Link>
                 );
               }
-              return <ButtonTile key={b.id} id={b.id} label={b.label}>{commonInner}</ButtonTile>;
+              
+              return (
+                <div key={b.id}>
+                  {buttonContent}
+                </div>
+              );
             })}
           </motion.div>
 
-          {/* Bottom dock */}
-          <div className="pointer-events-auto fixed left-1/2 -translate-x-1/2 bottom-6 w-[90%] max-w-[780px] rounded-3xl bg-white/70 dark:bg-gray-900/60 backdrop-blur border border-black/10 dark:border-white/10 shadow-xl px-3 py-2 flex items-center justify-center gap-3">
+          {/* Enhanced Bottom Dock */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+            className={`pointer-events-auto fixed left-1/2 -translate-x-1/2 bottom-8 w-[90%] max-w-[800px] rounded-3xl backdrop-blur-xl border shadow-2xl px-6 py-4 flex items-center justify-center gap-6 ${
+              isDark 
+                ? "bg-white/5 border-white/10 shadow-red-500/5" 
+                : "bg-white/60 border-white/40 shadow-red-500/10"
+            }`}
+          >
             {[
-              { id: "home", icon: "mdi:home-outline", href: "/dashboard" },
-              { id: "navigraph", icon: "mdi:chart-areaspline", href: "https://charts.navigraph.com/", external: true },
-              { id: "settings", icon: "mdi:cog" },
-            ].map((d) => (
-              d.href ? (
-                <Link key={d.id} href={d.href as string} target={d.external ? "_blank" : undefined} rel={d.external ? "noopener noreferrer" : undefined} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl hover:bg-black/5 dark:hover:bg-white/10">
-                  <Icon icon={d.icon} />
-                </Link>
-              ) : (
-                <button key={d.id} type="button" onClick={() => setActiveModal("settings")} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl hover:bg-black/5 dark:hover:bg-white/10">
-                  <Icon icon={d.icon} />
-                </button>
-              )
+              { id: "home", icon: "mdi:home-outline", href: "/dashboard", label: "Home" },
+              { id: "navigraph", icon: "mdi:chart-areaspline", href: "https://charts.navigraph.com/", external: true, label: "Charts" },
+              { id: "settings", icon: "mdi:cog", label: "Settings" },
+            ].map((d, index) => (
+              <motion.div
+                key={d.id}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.9 + index * 0.1, duration: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center gap-2"
+              >
+                {d.href ? (
+                  <Link 
+                    href={d.href as string} 
+                    target={d.external ? "_blank" : undefined} 
+                    rel={d.external ? "noopener noreferrer" : undefined} 
+                    className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200 hover:shadow-lg ${
+                      isDark 
+                        ? "bg-white/10 hover:bg-white/20 hover:shadow-red-500/20" 
+                        : "bg-white/80 hover:bg-white hover:shadow-red-500/10"
+                    } backdrop-blur-sm border border-white/20`}
+                  >
+                    <Icon icon={d.icon} className="text-lg" />
+                  </Link>
+                ) : (
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveModal("settings")} 
+                    className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200 hover:shadow-lg ${
+                      isDark 
+                        ? "bg-white/10 hover:bg-white/20 hover:shadow-red-500/20" 
+                        : "bg-white/80 hover:bg-white hover:shadow-red-500/10"
+                    } backdrop-blur-sm border border-white/20`}
+                  >
+                    <Icon icon={d.icon} className="text-lg" />
+                  </button>
+                )}
+                <span className={`text-xs font-medium transition-colors ${
+                  isDark ? "text-white/70" : "text-gray-600"
+                }`}>
+                  {d.label}
+                </span>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
 
-          {/* Loadsheet Summary (optional) */}
+          {/* Enhanced Loadsheet Summary */}
           {loadsheetData.costIndex && (
             <motion.section
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className={`w-full max-w-4xl mx-auto mt-8 ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-white/90 border-black/10 text-gray-900"} backdrop-blur-sm border p-5 sm:p-6 rounded-2xl shadow-sm`}
+              transition={{ delay: 1.0, duration: 0.6, ease: "easeOut" }}
+              className={`w-full max-w-5xl mx-auto mt-12 backdrop-blur-xl border rounded-3xl shadow-2xl overflow-hidden ${
+                isDark 
+                  ? "bg-white/5 border-white/10 shadow-red-500/5" 
+                  : "bg-white/60 border-white/40 shadow-red-500/10"
+              }`}
               aria-labelledby="loadsheet-heading"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 id="loadsheet-heading" className="text-base sm:text-lg font-semibold flex items-center">
-                  <Icon icon="mdi:clipboard-text" className={`${isDark ? "text-rose-300" : "text-rose-600"} mr-2`} />
-                  Loadsheet Summary
-                </h3>
-                <span className={`${isDark ? "bg-white/5 text-white" : "bg-black/5 text-gray-900"} text-[11px] sm:text-xs px-2 py-1 rounded-full`}>SimBrief ID: {simbriefId}</span>
+              {/* Header */}
+              <div className={`px-6 py-4 border-b ${isDark ? "border-white/10" : "border-white/20"}`}>
+                <div className="flex items-center justify-between">
+                  <h3 id="loadsheet-heading" className="text-lg sm:text-xl font-bold flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                      isDark ? "bg-red-500/20" : "bg-red-100/80"
+                    }`}>
+                      <Icon icon="mdi:clipboard-text" className={`text-lg ${isDark ? "text-red-400" : "text-red-600"}`} />
+                    </div>
+                    <span className={isDark ? "text-white" : "text-gray-900"}>Flight Loadsheet</span>
+                  </h3>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                    isDark ? "bg-white/10 border border-white/20" : "bg-white/80 border border-white/40"
+                  }`}>
+                    <Icon icon="mdi:airplane" className="text-sm" />
+                    <span className="text-xs font-medium">{simbriefId}</span>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-sm">
-                <SummaryCell title="Dep UTC" value={loadsheetData.date ? new Date(loadsheetData.date).toISOString().substr(11, 5) : "-"} theme={isDark ? "dark" : "light"} />
-                <SummaryCell title="Countdown" value={countdown} theme={isDark ? "dark" : "light"} />
-                <SummaryCell title="Cost Index" value={loadsheetData.costIndex} theme={isDark ? "dark" : "light"} />
-                <SummaryCell title="PAX" value={loadsheetData.pax} theme={isDark ? "dark" : "light"} />
-                <SummaryCell title="ZFW" value={`${loadsheetData.zfw} / ${loadsheetData.zfwMax} kg`} theme={isDark ? "dark" : "light"} />
-                <SummaryCell title="TOW" value={`${loadsheetData.tow} / ${loadsheetData.towMax} kg`} theme={isDark ? "dark" : "light"} />
-                <div className={`${isDark ? "bg-white/5 hover:bg-white/10" : "bg-black/5 hover:bg-black/10"} col-span-1 md:col-span-2 p-3 rounded-lg transition-colors`}>
-                  <p className={`${isDark ? "text-gray-300" : "text-gray-600"} text-xs font-medium mb-1`}>Route</p>
-                  <p className="font-mono text-xs overflow-x-auto" aria-label="Flight route">
-                    {loadsheetData.route}
-                  </p>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <EnhancedSummaryCell 
+                    title="Departure UTC" 
+                    value={loadsheetData.date ? new Date(loadsheetData.date).toISOString().substr(11, 5) : "-"} 
+                    icon="mdi:clock-outline"
+                    theme={isDark ? "dark" : "light"} 
+                  />
+                  <EnhancedSummaryCell 
+                    title="Countdown" 
+                    value={countdown} 
+                    icon="mdi:timer-outline"
+                    theme={isDark ? "dark" : "light"} 
+                  />
+                  <EnhancedSummaryCell 
+                    title="Cost Index" 
+                    value={loadsheetData.costIndex} 
+                    icon="mdi:chart-line"
+                    theme={isDark ? "dark" : "light"} 
+                  />
+                  <EnhancedSummaryCell 
+                    title="Passengers" 
+                    value={loadsheetData.pax} 
+                    icon="mdi:account-group"
+                    theme={isDark ? "dark" : "light"} 
+                  />
+                  <EnhancedSummaryCell 
+                    title="Zero Fuel Weight" 
+                    value={`${loadsheetData.zfw} / ${loadsheetData.zfwMax} kg`} 
+                    icon="mdi:weight-kilogram"
+                    theme={isDark ? "dark" : "light"} 
+                  />
+                  <EnhancedSummaryCell 
+                    title="Takeoff Weight" 
+                    value={`${loadsheetData.tow} / ${loadsheetData.towMax} kg`} 
+                    icon="mdi:airplane-takeoff"
+                    theme={isDark ? "dark" : "light"} 
+                  />
+                </div>
+                
+                {/* Route Section */}
+                <div className={`mt-6 p-4 rounded-2xl border transition-all duration-300 ${
+                  isDark 
+                    ? "bg-white/5 border-white/10 hover:bg-white/10" 
+                    : "bg-white/40 border-white/30 hover:bg-white/60"
+                }`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon="mdi:map-marker-path" className={`text-lg ${isDark ? "text-blue-400" : "text-blue-600"}`} />
+                    <h4 className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Flight Route</h4>
+                  </div>
+                  <div className={`font-mono text-sm p-3 rounded-xl ${
+                    isDark ? "bg-black/20 border border-white/10" : "bg-white/60 border border-white/40"
+                  }`}>
+                    <p className="break-all" aria-label="Flight route">
+                      {loadsheetData.route || "No route data available"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.section>
@@ -795,6 +1028,12 @@ export default function Dashboard() {
                     onClose={() => setActiveModal(null)}
                   />
                 )}
+                {activeModal === "gsx" && (
+                  <GSXControlModal
+                    show
+                    onClose={() => setActiveModal(null)}
+                  />
+                )}
               </div>
             </motion.div>
           </>
@@ -846,6 +1085,37 @@ function SummaryCell({ title, value, theme }: { title: string; value?: React.Rea
     >
       <p className={`${isDark ? "text-gray-300" : "text-gray-600"} text-xs font-medium mb-1`}>{title}</p>
       <p className="font-medium">{value}</p>
+    </motion.div>
+  );
+}
+
+function EnhancedSummaryCell({ title, value, icon, theme }: { title: string; value?: React.ReactNode; icon: string; theme: "light" | "dark" }) {
+  const isDark = theme === "dark";
+  return (
+    <motion.div
+      className={`p-4 rounded-2xl border transition-all duration-300 hover:shadow-lg ${
+        isDark 
+          ? "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 hover:shadow-red-500/10" 
+          : "bg-white/40 border-white/30 hover:bg-white/60 hover:border-white/50 hover:shadow-red-500/5"
+      } backdrop-blur-sm`}
+      whileHover={{ y: -4, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+          isDark ? "bg-red-500/20" : "bg-red-100/80"
+        }`}>
+          <Icon icon={icon} className={`text-sm ${isDark ? "text-red-400" : "text-red-600"}`} />
+        </div>
+        <p className={`text-xs font-semibold uppercase tracking-wide ${
+          isDark ? "text-gray-300" : "text-gray-600"
+        }`}>
+          {title}
+        </p>
+      </div>
+      <p className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+        {value || "-"}
+      </p>
     </motion.div>
   );
 }
