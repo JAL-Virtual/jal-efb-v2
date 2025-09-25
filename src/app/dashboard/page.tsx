@@ -32,7 +32,6 @@ const FlighttoolModal = dynamic(() => import("../components/FlightToolsModal").t
 const MapComponent = dynamic(() => import("../map/MapComponent").then(m => m.default), { ssr: false });
 const ClockModal = dynamic(() => import("../components/ClockModal").then(m => m.default), { ssr: false });
 const WindCalculatorModal = dynamic(() => import("../components/WindCalculatorModal").then(m => m.default), { ssr: false });
-const GSXControlModal = dynamic(() => import("../components/GSXControlModal").then(m => m.default), { ssr: false });
 
 /* -------------------------------------------------------------------------- */
 /* Images (local in /public) */
@@ -97,7 +96,6 @@ const ICONS: Record<string, StaticImageData | undefined> = {
   plane: icon_plane,
   home: icon_home,
   wind: icon_wind,
-  gsx: undefined, // Will use iconify fallback
 };
 
 const iconifyFallback: Record<string, string> = {
@@ -105,7 +103,6 @@ const iconifyFallback: Record<string, string> = {
   clock: "mdi:clock-outline",
   notam: "mdi:alert-decagram-outline",
   crew: "mdi:account-group-outline",
-  gsx: "mdi:airplane-settings",
 };
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"], display: "swap" });
@@ -128,7 +125,6 @@ const getButtons = (t: any) => [
   { id: "flighttools", label: t.buttons.flightTools, icon: "flighttools", modal: "flighttool" as const },
   { id: "clock", label: t.buttons.clockZulu, icon: "clock", modal: "clock" as const },
   { id: "windcalc", label: t.buttons.windCalc, icon: "wind", modal: "windcalc" as const },
-  { id: "gsx", label: t.buttons.gsxControl, icon: "gsx", modal: "gsx" as const },
 ] as const;
 
 export type LoadsheetFields = {
@@ -154,7 +150,6 @@ type ModalKey =
   | "map"
   | "clock"
   | "windcalc"
-  | "gsx"
   | null;
 
 // Isomorphic layout effect
@@ -1024,12 +1019,6 @@ export default function Dashboard() {
                 {activeModal === "clock" && <ClockModal show onClose={() => setActiveModal(null)} />}
                 {activeModal === "windcalc" && (
                   <WindCalculatorModal
-                    show
-                    onClose={() => setActiveModal(null)}
-                  />
-                )}
-                {activeModal === "gsx" && (
-                  <GSXControlModal
                     show
                     onClose={() => setActiveModal(null)}
                   />
