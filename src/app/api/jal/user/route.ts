@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing apiKey" }, { status: 400 });
     }
 
-    const upstream = await fetch("https://crew.jalvirtual.com/api/user", {
+    const upstream = await fetch("https://jalvirtual.com/api/user", {
       method: "GET",
       headers: {
         "X-API-Key": apiKey,

@@ -1,6 +1,6 @@
 // For Next.js App Router: app/api/acars-map/route.ts
 export async function GET() {
-  const res = await fetch("https://crew.jalvirtual.com/api/acars", {
+  const res = await fetch("https://jalvirtual.com/api/acars", {
     headers: { "Cache-Control": "no-cache" },
   });
   if (!res.ok) {

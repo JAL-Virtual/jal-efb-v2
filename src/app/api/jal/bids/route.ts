@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     }
 
     // Fetch user bids from JAL Virtual API
-    const upstream = await fetch("https://crew.jalvirtual.com/api/user/bids", {
+    const upstream = await fetch("hhttps://jalvirtual.com/api/user/bids", {
       method: "GET",
       headers: {
         "X-API-Key": apiKey,
