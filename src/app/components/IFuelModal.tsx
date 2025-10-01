@@ -13,6 +13,7 @@ type Props = {
   arr?: string;
   initialFields?: Partial<FuelFields>;
   onConfirm: any;
+  simbriefId?: string;
 };
 
 type FuelFields = {
@@ -33,7 +34,8 @@ export default function IFuelModal({
   dpt = '',
   arr = '',
   initialFields = {},
-  onConfirm
+  onConfirm,
+  simbriefId = ''
 }: Props) {
   const [fields, setFields] = useState<FuelFields>({
     callsign: "",
@@ -49,6 +51,7 @@ export default function IFuelModal({
   });
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isFetchingSimbrief, setIsFetchingSimbrief] = useState(false);
 
   // auto‐calc total
   const totalFuel = (Number(fields.minFuel) || 0) + (Number(fields.extraFuel) || 0);
@@ -64,9 +67,52 @@ export default function IFuelModal({
     setFeedback(null);
   }, [show, dpt, arr, initialFields]);
 
+  // Auto-sync SimBrief data when modal opens
+  useEffect(() => {
+    if (show && simbriefId) {
+      fetchSimbriefData();
+    }
+  }, [show, simbriefId]);
+
   const handleFuelType = (type: 'JET A1' | 'SAF') => {
     setFields(f => ({ ...f, fuelType: type }));
   };
+
+  // Fetch SimBrief data
+  async function fetchSimbriefData() {
+    if (!simbriefId) {
+      setFeedback("❌ SimBrief ID not configured");
+      return;
+    }
+
+    setIsFetchingSimbrief(true);
+    setFeedback(null);
+
+    try {
+      const res = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?userid=${encodeURIComponent(simbriefId)}&json=v2`, { 
+        cache: "no-store" 
+      });
+      
+      if (!res.ok) throw new Error("SimBrief HTTP error");
+      const data = await res.json();
+
+      // Update fields with SimBrief data
+      setFields(f => ({
+        ...f,
+        dep: data.origin?.icao_code || f.dep,
+        arr: data.destination?.icao_code || f.arr,
+        callsign: `${data.general?.icao_airline || ''}${data.general?.flight_number || ''}` || f.callsign,
+        etow: data.weights?.est_tow ? Math.round(data.weights.est_tow).toString() : f.etow,
+        mtow: data.weights?.max_tow ? Math.round(data.weights.max_tow).toString() : f.mtow,
+      }));
+
+      setFeedback("✅ SimBrief data loaded successfully!");
+    } catch (error) {
+      setFeedback("❌ Failed to fetch SimBrief data");
+    }
+
+    setIsFetchingSimbrief(false);
+  }
 
   async function handleConfirm() {
     setIsSending(true);
@@ -124,6 +170,7 @@ export default function IFuelModal({
           </h2>
           <p className="text-gray-300 text-lg font-medium">AT RAMP - JAL VIRTUAL</p>
           <div className="w-24 h-1 bg-gradient-to-r from-[#b60c18] to-[#ea4256] mx-auto mt-3 rounded-full"></div>
+          
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative z-10">

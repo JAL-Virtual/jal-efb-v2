@@ -52,7 +52,7 @@ export default function MapComponent({ embedded = false, onClose }: { embedded?:
   });
 
   // --- Constants --------------------------------------------------------------
-  const AIRCRAFT_ICON_URL = "https://crew.jalvirtual.com/assets/img/acars/aircraft.png";
+  const AIRCRAFT_ICON_URL = "https://jalvirtual.com/assets/img/acars/aircraft.png";
   const TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"; // CARTO Positron (free, no key)
 
   // --- Types ------------------------------------------------------------------

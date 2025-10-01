@@ -159,6 +159,13 @@ export default function LoadsheetModal({
     setEffectiveSimbriefId(simbriefId || '');
   }, [simbriefId]);
 
+  // Auto-sync SimBrief data when modal opens
+  useEffect(() => {
+    if (show && effectiveSimbriefId) {
+      handleAutofill();
+    }
+  }, [show, effectiveSimbriefId]);
+
   // โหลด SimBrief ID จาก DB เมื่อเปิด modal และกรณี prop ว่าง
   useEffect(() => {
     if (!show) return;
@@ -372,38 +379,28 @@ export default function LoadsheetModal({
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="px-6 py-4 bg-gray-50 dark:bg-[#2C2C2E] flex flex-col sm:flex-row justify-end gap-3">
-          <button
-            onClick={handleAutofill}
-            disabled={isLoading || !canAutofill}
-            className="px-4 py-2 rounded-lg font-medium text-white bg-[#007AFF] hover:bg-[#0062CC] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            title={
-              loadingSimbriefFromDb && !effectiveSimbriefId
-                ? 'Loading SimBrief ID...'
-                : canAutofill
-                ? `Use SimBrief ID: ${effectiveSimbriefId}`
-                : 'No SimBrief ID'
-            }
-          >
+        {/* Status Bar */}
+        <div className="px-6 py-4 bg-gray-50 dark:bg-[#2C2C2E] flex items-center justify-between">
+          <div className="flex items-center gap-2">
             {isLoading ? (
               <>
-                <Icon icon="line-md:loading-twotone-loop" className="text-lg animate-spin" />
-                Fetching...
+                <Icon icon="line-md:loading-twotone-loop" className="text-lg animate-spin text-[#007AFF]" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Syncing with SimBrief...</span>
+              </>
+            ) : effectiveSimbriefId ? (
+              <>
+                <Icon icon="mdi:check-circle" className="text-lg text-green-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  SimBrief Connected (ID: {effectiveSimbriefId})
+                </span>
               </>
             ) : (
               <>
-                <Icon icon="mdi:cloud-download" className="text-lg" />
-                {loadingSimbriefFromDb && !effectiveSimbriefId ? 'Loading SimBrief ID...' : 'Autofill from SimBrief'}
+                <Icon icon="mdi:alert-circle" className="text-lg text-yellow-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">No SimBrief ID configured</span>
               </>
             )}
-          </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3C]"
-          >
-            Close
-          </button>
+          </div>
         </div>
       </div>
 

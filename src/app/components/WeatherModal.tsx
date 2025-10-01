@@ -336,389 +336,337 @@ export default function WeatherModal({ show, onClose }: Props) {
 
   return (
     <Modal onClose={onClose} wide>
-      {/* Hidden number input spinners */}
-      <style>{`
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type="number"] {
-          -moz-appearance: textfield;
-        }
-      `}</style>
-
-      <div className="relative w-full max-w-7xl bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-600/50 backdrop-blur-xl">
-        {/* Enhanced Header */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-800/95 to-slate-800/95 backdrop-blur-sm px-8 py-6 border-b border-gray-600/50 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-              <Icon icon="mdi:weather-partly-cloudy" width={28} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                🌤️ Weather Center
-              </h2>
-              <p className="text-sm text-gray-400 mt-1">Real-time aviation weather data</p>
-            </div>
-          </div>
-          {/* Enhanced decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full blur-2xl"></div>
+      <div className="relative w-full max-w-6xl bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white p-8 rounded-3xl shadow-2xl border border-gray-600/50 relative overflow-hidden backdrop-blur-xl">
+        {/* Enhanced Decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#0ea5e9] via-[#06b6d4] to-[#0ea5e9] animate-pulse"></div>
+        <div className="absolute -top-16 -right-16 w-32 h-32 bg-gradient-to-br from-[#0ea5e9]/30 to-[#06b6d4]/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-gradient-to-tr from-[#06b6d4]/30 to-[#0ea5e9]/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-gradient-to-r from-[#0ea5e9]/10 to-[#06b6d4]/10 rounded-full blur-2xl"></div>
+        
+        <div className="text-center mb-8 relative z-10">
+          <h2 className="text-4xl font-black mb-3 bg-gradient-to-r from-[#0ea5e9] via-[#06b6d4] to-[#0ea5e9] bg-clip-text text-transparent animate-pulse">
+            🌤️ WEATHER CENTER
+          </h2>
+          <p className="text-gray-300 text-lg font-medium">Real-time Aviation Weather Data</p>
+          <div className="w-24 h-1 bg-gradient-to-r from-[#0ea5e9] to-[#06b6d4] mx-auto mt-3 rounded-full"></div>
         </div>
 
-        <div className="flex h-[650px] overflow-hidden">
-          {/* Enhanced Navigation */}
-          <div className="w-72 bg-gradient-to-b from-gray-800/95 to-slate-800/95 backdrop-blur-sm border-r border-gray-600/50 p-6 overflow-y-auto">
-            <div className="space-y-3">
-              {([
-                {id: 'lookup', icon: 'mdi:weather-cloudy', label: 'METAR/TAF Lookup', emoji: '🔍'},
-                {id: 'decoded', icon: 'mdi:file-document-outline', label: 'Decoded Report', emoji: '📊'},
-              ] as {id: 'lookup' | 'decoded', icon: string, label: string, emoji: string}[]).map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`w-full text-left px-5 py-4 rounded-xl flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 ${
-                    activeSection === item.id
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                  }`}
-                  disabled={item.id === 'decoded' && !metar}
-                >
-                  <div className={`p-2 rounded-lg ${activeSection === item.id ? 'bg-white/20' : 'bg-gray-700/50'}`}>
-                    <Icon icon={item.icon} width={20} />
-                  </div>
-                  <div>
-                    <div className="font-semibold">{item.emoji} {item.label}</div>
-                    <div className="text-xs opacity-75">
-                      {item.id === 'lookup' ? 'Fetch weather data' : 'View decoded info'}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-8 relative z-10">
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-2 border border-gray-600/50">
+            {([
+              {id: 'lookup', label: '🔍 METAR/TAF Lookup', emoji: '🔍'},
+              {id: 'decoded', label: '📊 Decoded Report', emoji: '📊'},
+            ] as {id: 'lookup' | 'decoded', label: string, emoji: string}[]).map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                disabled={item.id === 'decoded' && !metar}
+                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 ${
+                  activeSection === item.id
+                    ? 'bg-gradient-to-r from-[#0ea5e9] to-[#06b6d4] text-white shadow-lg shadow-[#0ea5e9]/30'
+                    : 'text-gray-300 hover:bg-gray-700/50 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Enhanced Content Area */}
-          <div className="flex-1 bg-gradient-to-br from-gray-900/95 to-slate-900/95 backdrop-blur-sm overflow-y-auto p-8">
-            {/* Lookup Section */}
-            {activeSection === 'lookup' && (
-              <div className="space-y-8">
-                <div className="flex items-center space-x-6 mb-8">
-                  <div className="p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
-                    <Icon icon="mdi:weather-cloudy" width={32} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">🔍 METAR / TAF Lookup</h3>
-                    <p className="text-gray-400 mt-2">Fetch real-time weather reports for any airport worldwide</p>
+        {/* Content Area */}
+        <div className="relative z-10">
+          {/* Lookup Section */}
+          {activeSection === 'lookup' && (
+            <div className="space-y-6">
+              {/* Search Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-[#0ea5e9] rounded-full"></span>
+                  ICAO Code
+                </label>
+                <div className="relative">
+                  <input
+                    className="w-full p-4 border border-gray-500/50 rounded-xl bg-gray-800/80 backdrop-blur-sm text-white focus:ring-2 focus:ring-[#0ea5e9]/50 focus:border-[#0ea5e9] transition-all duration-300 hover:bg-gray-700/80 text-lg font-medium uppercase tracking-widest"
+                    value={icao}
+                    onChange={e => setIcao(e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())}
+                    placeholder="e.g. RJTT"
+                    maxLength={4}
+                    autoFocus
+                    spellCheck={false}
+                  />
+                  <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-[#0ea5e9] to-[#06b6d4] rounded-lg">
+                    <Icon icon="mdi:airplane" width={20} className="text-white" />
                   </div>
                 </div>
-
-                {/* Enhanced Search Input */}
-                <div className="mb-8">
-                  <div className="relative">
-                    <input
-                      className="w-full px-6 py-4 bg-gradient-to-r from-gray-800/80 to-slate-800/80 border-2 border-gray-600/50 rounded-2xl text-white font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-300 uppercase tracking-widest backdrop-blur-sm hover:bg-gray-700/80"
-                      value={icao}
-                      onChange={e => setIcao(e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())}
-                      placeholder="Enter ICAO code (e.g., RJTT)"
-                      maxLength={4}
-                      autoFocus
-                      spellCheck={false}
-                    />
-                    <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
-                      <Icon icon="mdi:airplane" width={20} className="text-white" />
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-4 mt-6">
-                    <button
-                      onClick={handleFetch}
-                      disabled={loading || icao.length !== 4}
-                      className={`flex-1 px-6 py-4 rounded-2xl font-bold text-white transition-all duration-300 transform hover:scale-105 ${
-                        loading || icao.length !== 4
-                          ? 'bg-gradient-to-r from-gray-700 to-gray-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl'
-                      }`}
-                    >
-                      {loading ? (
-                        <span className="inline-flex items-center gap-3">
-                          <Icon icon="mdi:loading" className="animate-spin" width={24} />
-                          🌤️ Fetching Weather Data...
-                        </span>
-                      ) : (
-                        '🌤️ Fetch METAR & TAF'
-                      )}
-                    </button>
-
-                    {metar && (
-                      <button
-                        onClick={handleDecode}
-                        className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-2xl text-white font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                      >
-                        📊 Decode METAR
-                      </button>
+                
+                <div className="flex gap-4 mt-6">
+                  <button
+                    onClick={handleFetch}
+                    disabled={loading || icao.length !== 4}
+                    className={`flex-1 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 ${
+                      loading || icao.length !== 4
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-[#0ea5e9] to-[#06b6d4] text-white hover:from-[#0284c7] hover:to-[#0891b2] shadow-lg hover:shadow-xl'
+                    }`}
+                  >
+                    {loading ? (
+                      <span className="inline-flex items-center gap-3">
+                        <Icon icon="mdi:loading" className="animate-spin" width={24} />
+                        🌤️ FETCHING...
+                      </span>
+                    ) : (
+                      '🌤️ FETCH METAR & TAF'
                     )}
-                  </div>
-                </div>
-
-                {/* Results */}
-                <div className="space-y-6">
-                  {stationName && (
-                    <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
-                      <div className="flex items-center space-x-2 text-blue-400 mb-2">
-                        <Icon icon="mdi:office-building-marker" width={20} />
-                        <span className="font-medium">Station Information</span>
-                      </div>
-                      <div className="text-white font-semibold">{stationName}</div>
-                    </div>
-                  )}
+                  </button>
 
                   {metar && (
-                    <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
-                      <div className="flex items-center space-x-2 text-blue-400 mb-2">
-                        <Icon icon="mdi:weather-windy" width={20} />
-                        <span className="font-medium">METAR</span>
-                      </div>
-                      <div className="font-mono text-white bg-gray-700 p-3 rounded-md whitespace-pre-wrap break-words">
-                        {metar}
-                      </div>
-                    </div>
-                  )}
-
-                  {taf && (
-                    <div className="p-4 bg-gray-800 rounded-lg border border-gray-700">
-                      <div className="flex items-center space-x-2 text-blue-400 mb-2">
-                        <Icon icon="mdi:weather-night-partly-cloudy" width={20} />
-                        <span className="font-medium">TAF</span>
-                      </div>
-                      <div className="font-mono text-white bg-gray-700 p-3 rounded-md whitespace-pre-wrap break-words">
-                        {taf}
-                      </div>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div className="p-4 bg-red-900/30 rounded-lg border border-red-700 text-red-400 font-medium">
-                      <div className="flex items-center space-x-2">
-                        <Icon icon="mdi:alert-circle" width={20} />
-                        <span>Error: {error}</span>
-                      </div>
-                    </div>
+                    <button
+                      onClick={handleDecode}
+                      className="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl text-white font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    >
+                      📊 DECODE
+                    </button>
                   )}
                 </div>
               </div>
-            )}
 
-            {/* Decoded Report Section */}
-            {activeSection === 'decoded' && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-4 mb-6">
-                  <Icon icon="mdi:file-document-outline" width={28} className="text-blue-400 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">Decoded METAR Report</h3>
-                    <p className="text-sm text-gray-400">Detailed breakdown of the METAR information</p>
+              {/* Results */}
+              <div className="space-y-4">
+                {stationName && (
+                  <div className="p-5 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50">
+                    <div className="flex items-center space-x-2 text-[#0ea5e9] mb-3">
+                      <Icon icon="mdi:office-building-marker" width={20} />
+                      <span className="font-semibold">Station Information</span>
+                    </div>
+                    <div className="text-white font-bold text-lg">{stationName}</div>
                   </div>
-                </div>
+                )}
 
-                {decoding ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <Icon icon="mdi:loading" className="animate-spin" width={24} />
-                      <span>Decoding METAR...</span>
+                {metar && (
+                  <div className="p-5 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50">
+                    <div className="flex items-center space-x-2 text-[#0ea5e9] mb-3">
+                      <Icon icon="mdi:weather-windy" width={20} />
+                      <span className="font-semibold">METAR</span>
                     </div>
-                  </div>
-                ) : decodedMetar ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Basic Info */}
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:information-outline" className="mr-2 text-blue-400" />
-                          Basic Information
-                        </h4>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="text-sm text-gray-400">Station</div>
-                            <div className="text-white font-mono">{decodedMetar.station || 'N/A'}</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-gray-400">Time</div>
-                            <div className="text-white font-mono">{decodedMetar.timestamp || 'N/A'}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Wind */}
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:weather-windy" className="mr-2 text-blue-400" />
-                          Wind Information
-                        </h4>
-                        <div className="text-white font-mono">
-                          {decodedMetar.wind || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Visibility */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                      <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                        <Icon icon="mdi:eye-outline" className="mr-2 text-blue-400" />
-                        Visibility
-                      </h4>
-                      <div className="text-white font-mono">
-                        {decodedMetar.visibility || 'N/A'}
-                      </div>
-                    </div>
-
-                    {/* Weather Phenomena */}
-                    {decodedMetar.weather.length > 0 && (
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:weather-pouring" className="mr-2 text-blue-400" />
-                          Weather
-                        </h4>
-                        <div className="space-y-2">
-                          {decodedMetar.weather.map((w: string, i: number) => (
-                            <div key={i} className="text-white font-mono">{w}</div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Clouds */}
-                    {decodedMetar.clouds.length > 0 && (
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:weather-cloudy" className="mr-2 text-blue-400" />
-                          Cloud Layers
-                        </h4>
-                        <div className="space-y-2">
-                          {decodedMetar.clouds.map((cloud: any, index: number) => (
-                            <div key={index} className="flex items-center space-x-4">
-                              <div className="text-white font-mono flex-1">
-                                {cloud.coverage} {cloud.type || ''} at {cloud.altitude}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Temperature */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:thermometer" className="mr-2 text-blue-400" />
-                          Temperature
-                        </h4>
-                        <div className="text-white font-mono">
-                          {decodedMetar.temperature || 'N/A'}
-                        </div>
-                      </div>
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:water-percent" className="mr-2 text-blue-400" />
-                          Dew Point
-                        </h4>
-                        <div className="text-white font-mono">
-                          {decodedMetar.dewpoint || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Altimeter */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                      <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                        <Icon icon="mdi:gauge" className="mr-2 text-blue-400" />
-                        Altimeter
-                      </h4>
-                      <div className="text-white font-mono">
-                        {decodedMetar.altimeter || 'N/A'}
-                      </div>
-                    </div>
-
-                    {/* Forecast */}
-                    {decodedMetar.forecast && (
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:weather-partly-cloudy" className="mr-2 text-blue-400" />
-                          Forecast
-                        </h4>
-                        <div className="text-white font-mono">
-                          {decodedMetar.forecast}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Remarks */}
-                    {decodedMetar.remarks.length > 0 && (
-                      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <Icon icon="mdi:note-text-outline" className="mr-2 text-blue-400" />
-                          Remarks
-                        </h4>
-                        <div className="space-y-2">
-                          {decodedMetar.remarks.map((r: any, i: number) => (
-                            <div key={i} className="text-white">
-                              <span className="font-mono text-blue-300">{r.code}:</span> {r.meaning}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Plain English Summary */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                      <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                        <Icon icon="mdi:translate" className="mr-2 text-blue-400" />
-                        Plain English Summary
-                      </h4>
-                      <div className="text-white">
-                        {decodedMetar.plainEnglish}
-                      </div>
-                    </div>
-
-                    {/* Raw METAR */}
-                    <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-                      <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                        <Icon icon="mdi:code-json" className="mr-2 text-blue-400" />
-                        Original METAR
-                      </h4>
-                      <div className="font-mono text-white bg-gray-700 p-3 rounded-md whitespace-pre-wrap break-words">
-                        {metar}
-                      </div>
+                    <div className="font-mono text-white bg-gray-700/50 p-4 rounded-lg whitespace-pre-wrap break-words text-sm">
+                      {metar}
                     </div>
                   </div>
-                ) : (
-                  <div className="p-4 bg-yellow-900/30 rounded-lg border border-yellow-700 text-yellow-400 font-medium">
+                )}
+
+                {taf && (
+                  <div className="p-5 bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50">
+                    <div className="flex items-center space-x-2 text-[#0ea5e9] mb-3">
+                      <Icon icon="mdi:weather-night-partly-cloudy" width={20} />
+                      <span className="font-semibold">TAF</span>
+                    </div>
+                    <div className="font-mono text-white bg-gray-700/50 p-4 rounded-lg whitespace-pre-wrap break-words text-sm">
+                      {taf}
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="p-5 bg-red-900/30 backdrop-blur-sm rounded-xl border border-red-700 text-red-400 font-medium">
                     <div className="flex items-center space-x-2">
                       <Icon icon="mdi:alert-circle" width={20} />
-                      <span>No decoded METAR available. Please fetch and decode a METAR first.</span>
+                      <span>Error: {error}</span>
                     </div>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 px-6 py-4 flex justify-between items-center">
-          {error && (
-            <div className="text-sm font-medium px-3 py-1.5 rounded bg-red-900/30 text-red-400">
-              {error}
             </div>
           )}
-          
-          <div className="flex space-x-3 ml-auto">
-            <button
-              onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Close
-            </button>
-          </div>
+
+          {/* Decoded Report Section */}
+          {activeSection === 'decoded' && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">📊 Decoded METAR Report</h3>
+                <p className="text-gray-400">Detailed breakdown of the METAR information</p>
+              </div>
+
+              {decoding ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="flex items-center gap-3 text-[#0ea5e9]">
+                    <Icon icon="mdi:loading" className="animate-spin" width={24} />
+                    <span className="font-medium">Decoding METAR...</span>
+                  </div>
+                </div>
+              ) : decodedMetar ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Basic Info */}
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:information-outline" className="mr-2 text-[#0ea5e9]" />
+                        Basic Information
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-sm text-gray-400">Station</div>
+                          <div className="text-white font-mono font-bold">{decodedMetar.station || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-400">Time</div>
+                          <div className="text-white font-mono">{decodedMetar.timestamp || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Wind */}
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:weather-windy" className="mr-2 text-[#0ea5e9]" />
+                        Wind Information
+                      </h4>
+                      <div className="text-white font-mono">
+                        {decodedMetar.wind || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visibility */}
+                  <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Icon icon="mdi:eye-outline" className="mr-2 text-[#0ea5e9]" />
+                      Visibility
+                    </h4>
+                    <div className="text-white font-mono">
+                      {decodedMetar.visibility || 'N/A'}
+                    </div>
+                  </div>
+
+                  {/* Weather Phenomena */}
+                  {decodedMetar.weather.length > 0 && (
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:weather-pouring" className="mr-2 text-[#0ea5e9]" />
+                        Weather
+                      </h4>
+                      <div className="space-y-2">
+                        {decodedMetar.weather.map((w: string, i: number) => (
+                          <div key={i} className="text-white font-mono">{w}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clouds */}
+                  {decodedMetar.clouds.length > 0 && (
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:weather-cloudy" className="mr-2 text-[#0ea5e9]" />
+                        Cloud Layers
+                      </h4>
+                      <div className="space-y-2">
+                        {decodedMetar.clouds.map((cloud: any, index: number) => (
+                          <div key={index} className="flex items-center space-x-4">
+                            <div className="text-white font-mono flex-1">
+                              {cloud.coverage} {cloud.type || ''} at {cloud.altitude}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Temperature */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:thermometer" className="mr-2 text-[#0ea5e9]" />
+                        Temperature
+                      </h4>
+                      <div className="text-white font-mono">
+                        {decodedMetar.temperature || 'N/A'}
+                      </div>
+                    </div>
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:water-percent" className="mr-2 text-[#0ea5e9]" />
+                        Dew Point
+                      </h4>
+                      <div className="text-white font-mono">
+                        {decodedMetar.dewpoint || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Altimeter */}
+                  <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Icon icon="mdi:gauge" className="mr-2 text-[#0ea5e9]" />
+                      Altimeter
+                    </h4>
+                    <div className="text-white font-mono">
+                      {decodedMetar.altimeter || 'N/A'}
+                    </div>
+                  </div>
+
+                  {/* Forecast */}
+                  {decodedMetar.forecast && (
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:weather-partly-cloudy" className="mr-2 text-[#0ea5e9]" />
+                        Forecast
+                      </h4>
+                      <div className="text-white font-mono">
+                        {decodedMetar.forecast}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Remarks */}
+                  {decodedMetar.remarks.length > 0 && (
+                    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        <Icon icon="mdi:note-text-outline" className="mr-2 text-[#0ea5e9]" />
+                        Remarks
+                      </h4>
+                      <div className="space-y-2">
+                        {decodedMetar.remarks.map((r: any, i: number) => (
+                          <div key={i} className="text-white">
+                            <span className="font-mono text-[#0ea5e9]">{r.code}:</span> {r.meaning}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plain English Summary */}
+                  <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Icon icon="mdi:translate" className="mr-2 text-[#0ea5e9]" />
+                      Plain English Summary
+                    </h4>
+                    <div className="text-white">
+                      {decodedMetar.plainEnglish}
+                    </div>
+                  </div>
+
+                  {/* Raw METAR */}
+                  <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-600/50 p-5">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Icon icon="mdi:code-json" className="mr-2 text-[#0ea5e9]" />
+                      Original METAR
+                    </h4>
+                    <div className="font-mono text-white bg-gray-700/50 p-4 rounded-lg whitespace-pre-wrap break-words text-sm">
+                      {metar}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-5 bg-yellow-900/30 backdrop-blur-sm rounded-xl border border-yellow-700 text-yellow-400 font-medium">
+                  <div className="flex items-center space-x-2">
+                    <Icon icon="mdi:alert-circle" width={20} />
+                    <span>No decoded METAR available. Please fetch and decode a METAR first.</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Modal>

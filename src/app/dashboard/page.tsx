@@ -960,6 +960,9 @@ export default function Dashboard() {
                   <IFuelModal
                     show
                     onClose={() => setActiveModal(null)}
+                    dpt={flight.dpt}
+                    arr={flight.arr}
+                    simbriefId={simbriefId}
                     onConfirm={async () => {
                       toast.success("Fuel Request Sent!", {
                         icon: "⛽",

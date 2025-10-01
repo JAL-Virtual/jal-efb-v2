@@ -3,7 +3,7 @@
 
 export async function GET(request: Request) {
   try {
-    const externalApiUrl = 'https://jalvirtual.com/apiacars';
+    const externalApiUrl = 'https://jalvirtual.com/api/acars';
     console.log(`[API Route] Fetching from external API: ${externalApiUrl}`);
 
     const response = await fetch(externalApiUrl, {
